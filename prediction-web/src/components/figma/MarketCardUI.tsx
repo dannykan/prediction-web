@@ -116,7 +116,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
   const marketImage = market.imageUrl || 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=800';
 
   // 判斷市場類型
-  const isYesNo = market.questionType === 'binary' || !market.options || market.options.length === 0;
+  const isYesNo = market.questionType === 'YES_NO' || !market.options || market.options.length === 0;
   const isMultipleChoice = !isYesNo && market.options && market.options.length > 0;
 
   const handleButtonClick = (e: React.MouseEvent, optionId?: string, side?: 'YES' | 'NO') => {
