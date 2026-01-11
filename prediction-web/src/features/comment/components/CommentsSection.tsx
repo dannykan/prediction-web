@@ -298,8 +298,8 @@ export function CommentsSection({ marketId, userId, highlightCommentId }: Commen
                           {comment.userBet.optionName && (
                             <span className="font-medium text-slate-700">{comment.userBet.optionName}</span>
                           )}
-                          <span className={comment.userBet.side === 'YES' || comment.userBet.direction === 'yes' ? 'text-green-600' : 'text-red-600'}>
-                            {comment.userBet.side === 'YES' || comment.userBet.direction === 'yes' ? 'O' : 'X'}
+                          <span className={comment.userBet.side === 'YES' ? 'text-green-600' : 'text-red-600'}>
+                            {comment.userBet.side === 'YES' ? 'O' : 'X'}
                           </span>
                           <Image 
                             src="/images/G_coin_icon.png" 

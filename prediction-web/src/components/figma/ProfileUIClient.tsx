@@ -48,7 +48,7 @@ export function ProfileUIClient() {
         setUser(userData);
         setIsLoggedIn(true);
         setEditName(userData.displayName || userData.username || '');
-        setEditAvatarUrl(userData.avatarUrl);
+        setEditAvatarUrl(userData.avatarUrl ?? null);
 
         // Fetch all data in parallel with error handling for each
         const [stats, txs, pos, commentsData, questsData, unreadCount] = await Promise.allSettled([
@@ -131,7 +131,7 @@ export function ProfileUIClient() {
   const handleEditClick = () => {
     if (user) {
       setEditName(user.displayName || user.username || '');
-      setEditAvatarUrl(user.avatarUrl);
+      setEditAvatarUrl(user.avatarUrl ?? null);
       setIsEditing(true);
     }
   };
@@ -140,7 +140,7 @@ export function ProfileUIClient() {
     setIsEditing(false);
     if (user) {
       setEditName(user.displayName || user.username || '');
-      setEditAvatarUrl(user.avatarUrl);
+      setEditAvatarUrl(user.avatarUrl ?? null);
     }
   };
 
@@ -167,7 +167,7 @@ export function ProfileUIClient() {
       alert('頭像上傳失敗，請稍後再試');
       // Reset to original avatar on error
       if (user) {
-        setEditAvatarUrl(user.avatarUrl);
+        setEditAvatarUrl(user.avatarUrl ?? null);
       }
     } finally {
       setIsUploading(false);
