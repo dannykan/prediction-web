@@ -230,7 +230,7 @@ export function CompactMarketCard({ market, index }: CompactMarketCardProps) {
               </div>
               
               {/* Right - Probability Bar */}
-              {questionType === 'binary' && (
+              {questionType === 'YES_NO' && (
                 <div className="flex items-center gap-1">
                   <span
                     className="font-bold text-[#00FFFF]"

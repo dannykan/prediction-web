@@ -24,7 +24,7 @@ interface BackendMarketListItem {
     noVolume?: number;
   }>;
   votePercentage?: Record<string, number>;
-  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'binary' | 'single' | 'multiple';
+  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE';
   category?: {
     id: string;
     name: string;

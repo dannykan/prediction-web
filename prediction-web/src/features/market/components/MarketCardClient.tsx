@@ -48,7 +48,7 @@ export function MarketCardClient({ market, commentsCount }: MarketCardClientProp
           } else {
             setYesProbability(50); // 默認值
           }
-        } else if (questionType === 'single' || questionType === 'SINGLE_CHOICE') {
+        } else if (questionType === 'SINGLE_CHOICE') {
           // 單選題: 從 exclusive market 獲取前兩高的機率
           const exclusiveMarket = await getExclusiveMarketByMarketId(market.id);
           if (exclusiveMarket.outcomes && exclusiveMarket.outcomes.length > 0) {
@@ -88,7 +88,7 @@ export function MarketCardClient({ market, commentsCount }: MarketCardClientProp
       } catch (error) {
         console.error(`[MarketCardClient] Failed to fetch probabilities for market ${market.id}:`, error);
         // 設置默認值
-        if (market.questionType === 'YES_NO' || market.questionType === 'binary') {
+        if (market.questionType === 'YES_NO') {
           setYesProbability(50);
         }
       } finally {
@@ -108,9 +108,9 @@ export function MarketCardClient({ market, commentsCount }: MarketCardClientProp
   };
 
   const questionType = market.questionType;
-  const isYES_NO = questionType === 'YES_NO' || questionType === 'binary';
-  const isSingle = questionType === 'single' || questionType === 'SINGLE_CHOICE';
-  const isMultiple = questionType === 'multiple' || questionType === 'MULTIPLE_CHOICE';
+  const isYES_NO = questionType === 'YES_NO';
+  const isSingle = questionType === 'SINGLE_CHOICE';
+  const isMultiple = questionType === 'MULTIPLE_CHOICE';
 
   return (
     <article

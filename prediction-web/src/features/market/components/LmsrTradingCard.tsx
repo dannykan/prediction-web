@@ -65,9 +65,9 @@ export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
   const [selectedOptionsForChart, setSelectedOptionsForChart] = useState<Set<string>>(new Set()); // For multiple choice: track which options are selected for chart display
   
   const questionType = market?.questionType || 'YES_NO';
-  const isBinary = questionType === 'YES_NO' || questionType === 'binary';
-  const isSingle = (questionType as string) === 'SINGLE_CHOICE' || questionType === 'single';
-  const isMultiple = (questionType as string) === 'MULTIPLE_CHOICE' || questionType === 'multiple';
+  const isBinary = questionType === 'YES_NO';
+  const isSingle = questionType === 'SINGLE_CHOICE';
+  const isMultiple = questionType === 'MULTIPLE_CHOICE';
 
   // Helper function to render amount input section
   const renderAmountInputSection = () => {

@@ -257,7 +257,7 @@ export function MarketDetailUI({
               <MarketDetailClient marketId={market.id}>
                 <ProbabilityChart 
                   marketId={market.id}
-                  isSingle={market.questionType === 'single'}
+                  isSingle={market.questionType === 'SINGLE_CHOICE'}
                   questionType={market.questionType}
                   marketOptions={market.options || []}
                 />
@@ -281,7 +281,7 @@ export function MarketDetailUI({
               <MarketDetailClient marketId={market.id}>
                 <TradeHistorySection 
                   marketId={market.id} 
-                  isSingle={market.questionType === 'single'}
+                  isSingle={market.questionType === 'SINGLE_CHOICE'}
                   questionType={market.questionType}
                 />
               </MarketDetailClient>

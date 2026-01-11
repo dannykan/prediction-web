@@ -13,7 +13,7 @@ interface TradeHistorySectionProps {
   marketId: string;
   userId?: string;
   isSingle?: boolean;
-  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'binary' | 'single' | 'multiple';
+  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE';
   loading?: boolean;
 }
 
@@ -24,11 +24,11 @@ function normalizeQuestionType(
   if (!questionType) return undefined;
   
   // Convert API format to internal format
-  if (questionType === 'binary' || questionType === 'YES_NO') {
+  if (questionType === 'YES_NO') {
     return 'YES_NO';
-  } else if (questionType === 'single' || questionType === 'SINGLE_CHOICE') {
+  } else if (questionType === 'SINGLE_CHOICE') {
     return 'SINGLE_CHOICE';
-  } else if (questionType === 'multiple' || questionType === 'MULTIPLE_CHOICE') {
+  } else if (questionType === 'MULTIPLE_CHOICE') {
     return 'MULTIPLE_CHOICE';
   }
   

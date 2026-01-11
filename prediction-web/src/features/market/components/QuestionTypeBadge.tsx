@@ -1,5 +1,5 @@
 interface QuestionTypeBadgeProps {
-  questionType: 'binary' | 'single' | 'multiple';
+  questionType: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE';
   optionsCount?: number;
   isCompact?: boolean;
 }
@@ -54,7 +54,7 @@ export function QuestionTypeBadge({
       >
         {label}
       </span>
-      {(questionType === 'single' || questionType === 'multiple') && optionsCount && (
+      {(questionType === 'SINGLE_CHOICE' || questionType === 'MULTIPLE_CHOICE') && optionsCount && (
         <span
           className="font-bold"
           style={{

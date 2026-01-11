@@ -18,7 +18,7 @@ import { clientFetch } from "@/core/api/client";
 interface ProbabilityChartProps {
   marketId: string;
   isSingle?: boolean;
-  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'binary' | 'single' | 'multiple';
+  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE';
   marketOptions?: Array<{ id: string; name: string }>; // Pass market options from parent
   selectedOptionIds?: string[]; // For multiple choice: which options to show in chart
   optionMarkets?: Array<{ id: string; optionId: string; optionName: string }>; // For multiple choice: option market info
@@ -51,9 +51,9 @@ export function ProbabilityChart({
   const [multipleChoiceTrades, setMultipleChoiceTrades] = useState<Map<string, Trade[]>>(new Map()); // For multiple choice: optionMarketId -> trades
   const [loading, setLoading] = useState(true);
 
-  const isYesNo = questionType === 'YES_NO' || questionType === 'binary';
-  const isSingleChoice = questionType === 'SINGLE_CHOICE' || questionType === 'single';
-  const isMultipleChoice = questionType === 'MULTIPLE_CHOICE' || questionType === 'multiple';
+  const isYesNo = questionType === 'YES_NO';
+  const isSingleChoice = questionType === 'SINGLE_CHOICE';
+  const isMultipleChoice = questionType === 'MULTIPLE_CHOICE';
 
   useEffect(() => {
     const loadData = async () => {
