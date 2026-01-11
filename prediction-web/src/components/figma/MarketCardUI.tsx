@@ -43,7 +43,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
       try {
         const questionType = market.questionType;
         
-        if (questionType === 'YES_NO' || questionType === 'binary') {
+        if (questionType === 'binary') {
           // YES_NO: 獲取第一個選項（通常是「是」選項）的 Yes 機率
           const optionMarkets = await getOptionMarketsByMarketId(market.id);
           if (optionMarkets && optionMarkets.length > 0) {
@@ -94,7 +94,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
       } catch (error) {
         console.error(`[MarketCardUI] Failed to fetch probabilities for market ${market.id}:`, error);
         // 設置默認值
-        if (market.questionType === 'YES_NO' || market.questionType === 'binary') {
+        if (market.questionType === 'binary') {
           setYesProbability(50);
         }
       } finally {
@@ -116,7 +116,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
   const marketImage = market.imageUrl || 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=800';
 
   // 判斷市場類型
-  const isYesNo = market.questionType === 'binary' || market.questionType === 'YES_NO' || !market.options || market.options.length === 0;
+  const isYesNo = market.questionType === 'binary' || !market.options || market.options.length === 0;
   const isMultipleChoice = !isYesNo && market.options && market.options.length > 0;
 
   const handleButtonClick = (e: React.MouseEvent, optionId?: string, side?: 'YES' | 'NO') => {
