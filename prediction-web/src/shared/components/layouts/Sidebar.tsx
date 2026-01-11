@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { 
   Home, 
   Trophy, 
-  User, 
+  User as UserIcon, 
   Bell,
   TrendingUp,
   // Settings, // Removed - Settings page removed
