@@ -31,7 +31,12 @@ jobs:
       
       - name: 📦 Install dependencies
         working-directory: ./prediction-web
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
       
       - name: 🔨 Build
         working-directory: ./prediction-web
