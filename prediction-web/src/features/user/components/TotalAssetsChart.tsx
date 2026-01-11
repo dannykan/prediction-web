@@ -404,7 +404,7 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
                 borderRadius: '8px',
                 fontSize: '12px',
               }}
-              formatter={(value: number) => ['G ' + formatCurrency(value), '總資產']}
+              formatter={(value: number | undefined) => ['G ' + formatCurrency(value || 0), '總資產']}
             />
             <Line
               type="monotone"
