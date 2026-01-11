@@ -21,7 +21,7 @@ export interface Market {
   createdAt?: string;
   updatedAt: string;
   // Extended fields for new design
-  questionType?: 'binary' | 'single' | 'multiple';
+  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE';
   optionsCount?: number;
   options?: Array<{
     id: string;

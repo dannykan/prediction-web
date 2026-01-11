@@ -196,11 +196,11 @@ export function normalizeMarket(
   // Normalize questionType
   const questionType = (() => {
     const qType = (backendMarket as any).questionType;
-    if (!qType) return 'binary' as const;
-    if (qType === 'YES_NO' || qType === 'binary') return 'binary' as const;
-    if (qType === 'SINGLE_CHOICE' || qType === 'single') return 'single' as const;
-    if (qType === 'MULTIPLE_CHOICE' || qType === 'multiple') return 'multiple' as const;
-    return 'binary' as const;
+    if (!qType) return 'YES_NO' as const;
+    if (qType === 'YES_NO' || qType === 'binary') return 'YES_NO' as const;
+    if (qType === 'SINGLE_CHOICE' || qType === 'single') return 'SINGLE_CHOICE' as const;
+    if (qType === 'MULTIPLE_CHOICE' || qType === 'multiple') return 'MULTIPLE_CHOICE' as const;
+    return 'YES_NO' as const;
   })();
 
   // Check if official market (createdBy is null or specific system user)

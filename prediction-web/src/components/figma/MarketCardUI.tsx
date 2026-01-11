@@ -43,7 +43,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
       try {
         const questionType = market.questionType;
         
-        if (questionType === 'binary') {
+        if (questionType === 'YES_NO') {
           // YES_NO: 獲取第一個選項（通常是「是」選項）的 Yes 機率
           const optionMarkets = await getOptionMarketsByMarketId(market.id);
           if (optionMarkets && optionMarkets.length > 0) {
@@ -54,7 +54,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
           } else {
             setYesProbability(50); // 默認值
           }
-        } else if (questionType === 'single' || questionType === 'SINGLE_CHOICE') {
+        } else if (questionType === 'SINGLE_CHOICE') {
           // 單選題: 從 exclusive market 獲取前兩高的機率
           const exclusiveMarket = await getExclusiveMarketByMarketId(market.id);
           if (exclusiveMarket.outcomes && exclusiveMarket.outcomes.length > 0) {
@@ -75,7 +75,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
               yesProbability: o.probability * 100, // price 是 0-1 之間的小數，需要乘以 100
             })));
           }
-        } else if (questionType === 'multiple' || questionType === 'MULTIPLE_CHOICE') {
+        } else if (questionType === 'MULTIPLE_CHOICE') {
           // 多選題: 從 option markets 獲取前兩高的 Yes 機率
           const optionMarkets = await getOptionMarketsByMarketId(market.id);
           if (optionMarkets.length > 0) {
@@ -94,7 +94,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
       } catch (error) {
         console.error(`[MarketCardUI] Failed to fetch probabilities for market ${market.id}:`, error);
         // 設置默認值
-        if (market.questionType === 'binary') {
+        if (market.questionType === 'YES_NO') {
           setYesProbability(50);
         }
       } finally {
