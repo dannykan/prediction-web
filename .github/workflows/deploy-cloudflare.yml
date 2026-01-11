@@ -21,58 +21,8 @@ jobs:
       deployments: write
     
     steps:
-      - name: 📥 Checkout root repository
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
-      
-      - name: 🔍 Debug directory structure
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Listing files:"
-          ls -la
-          echo "Checking for prediction-web:"
-          if [ -d "prediction-web" ]; then
-            echo "prediction-web directory exists"
-            ls -la prediction-web/ | head -10
-            if [ -f "prediction-web/package.json" ]; then
-              echo "✅ package.json exists in prediction-web"
-            else
-              echo "❌ package.json does NOT exist in prediction-web"
-            fi
-          else
-            echo "❌ prediction-web directory does NOT exist"
-          fi
-      
-      - name: 📥 Checkout prediction-web repository
-        uses: actions/checkout@v4
-        with:
-          repository: dannykan/prediction-web
-          path: prediction-web-temp
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: 🔄 Move prediction-web files
-        run: |
-          if [ -d "prediction-web-temp/prediction-web" ]; then
-            echo "Found prediction-web in temp directory"
-            rm -rf prediction-web || true
-            mv prediction-web-temp/prediction-web .
-            rm -rf prediction-web-temp
-          elif [ -f "prediction-web-temp/package.json" ]; then
-            echo "Found package.json in temp directory root"
-            rm -rf prediction-web || true
-            mv prediction-web-temp prediction-web
-          else
-            echo "Error: Could not find prediction-web content"
-            ls -la prediction-web-temp/
-            exit 1
-          fi
-          echo "Verifying prediction-web structure:"
-          ls -la prediction-web/ | head -10
-          if [ -f "prediction-web/package.json" ]; then
-            echo "✅ package.json found"
-          else
-            echo "❌ package.json still not found"
-            exit 1
-          fi
       
       - name: 🐹 Setup Node.js
         uses: actions/setup-node@v4
@@ -80,8 +30,8 @@ jobs:
           node-version: '18'
       
       - name: 📦 Install dependencies
+        working-directory: ./prediction-web
         run: |
-          cd prediction-web
           if [ -f package-lock.json ]; then
             echo "Found package-lock.json, using npm ci"
             npm ci
@@ -91,9 +41,8 @@ jobs:
           fi
       
       - name: 🔨 Build
-        run: |
-          cd prediction-web
-          npm run build
+        working-directory: ./prediction-web
+        run: npm run build
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
