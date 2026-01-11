@@ -17,7 +17,7 @@ export function CompactMarketCard({ market, index }: CompactMarketCardProps) {
   const isLargeBanner = index < 3;
   const marketUrl = `/m/${market.shortcode}-${market.slug}`;
   
-  const questionType = market.questionType || 'binary';
+  const questionType = market.questionType || 'YES_NO';
   const yesPercent = market.yesPercentage;
   const noPercent = market.noPercentage;
   const participants = market.participantsCount || 0;

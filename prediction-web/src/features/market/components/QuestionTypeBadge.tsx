@@ -10,24 +10,24 @@ export function QuestionTypeBadge({
   isCompact = false 
 }: QuestionTypeBadgeProps) {
   const config = {
-    binary: {
+    YES_NO: {
       icon: '✅',
       label: '是非題',
       color: '#00FFFF',
     },
-    single: {
+    SINGLE_CHOICE: {
       icon: '🎲',
       label: '單選題',
       color: '#FFD700',
     },
-    multiple: {
+    MULTIPLE_CHOICE: {
       icon: '🎯',
       label: '多選題',
       color: '#B620E0',
     },
   };
 
-  const { icon, label, color } = config[questionType] || config.binary;
+  const { icon, label, color } = config[questionType] || config.YES_NO;
 
   return (
     <div

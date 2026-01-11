@@ -19,20 +19,12 @@ interface TradeHistorySectionProps {
 
 // Convert questionType from API format to internal format
 function normalizeQuestionType(
-  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'binary' | 'single' | 'multiple'
+  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE'
 ): 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | undefined {
   if (!questionType) return undefined;
   
-  // Convert API format to internal format
-  if (questionType === 'YES_NO') {
-    return 'YES_NO';
-  } else if (questionType === 'SINGLE_CHOICE') {
-    return 'SINGLE_CHOICE';
-  } else if (questionType === 'MULTIPLE_CHOICE') {
-    return 'MULTIPLE_CHOICE';
-  }
-  
-  return undefined;
+  // Return as-is (already in correct format)
+  return questionType;
 }
 
 // Convert option name: replace Yes/No with O/X
