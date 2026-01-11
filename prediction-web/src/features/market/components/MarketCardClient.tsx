@@ -69,7 +69,7 @@ export function MarketCardClient({ market, commentsCount }: MarketCardClientProp
               yesProbability: o.probability * 100,
             })));
           }
-        } else if (questionType === 'multiple' || questionType === 'MULTIPLE_CHOICE') {
+        } else if (questionType === 'MULTIPLE_CHOICE') {
           // 多選題: 從 option markets 獲取前兩高的 Yes 機率
           const optionMarkets = await getOptionMarketsByMarketId(market.id);
           if (optionMarkets.length > 0) {
