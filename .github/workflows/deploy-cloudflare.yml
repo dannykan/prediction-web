@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: false
       
       - name: 🔍 Debug directory structure
         run: |
@@ -33,8 +35,27 @@ jobs:
           if [ -d "prediction-web" ]; then
             echo "prediction-web directory exists"
             ls -la prediction-web/ | head -10
+            if [ -f "prediction-web/package.json" ]; then
+              echo "package.json exists in prediction-web"
+            else
+              echo "package.json does NOT exist in prediction-web"
+            fi
           else
-            echo "prediction-web directory does not exist"
+            echo "prediction-web directory does NOT exist"
+            echo "This means prediction-web is a submodule that needs to be initialized"
+          fi
+      
+      - name: 📥 Checkout prediction-web submodule
+        run: |
+          if [ -d "prediction-web/.git" ]; then
+            echo "prediction-web is a submodule, initializing..."
+            git submodule update --init --recursive prediction-web || {
+              echo "Failed to initialize submodule, trying alternative approach"
+              # If submodule init fails, we need to handle it differently
+              exit 1
+            }
+          else
+            echo "prediction-web is not a submodule or already initialized"
           fi
       
       - name: 🐹 Setup Node.js
@@ -44,12 +65,11 @@ jobs:
       
       - name: 📦 Install dependencies
         run: |
-          cd prediction-web || {
+          if [ ! -d "prediction-web" ]; then
             echo "Error: prediction-web directory not found"
-            echo "Current directory contents:"
-            ls -la
             exit 1
-          }
+          fi
+          cd prediction-web
           if [ -f package-lock.json ]; then
             echo "Found package-lock.json, using npm ci"
             npm ci
