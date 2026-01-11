@@ -20,14 +20,24 @@ export async function serverFetch<T = unknown>(
   url: string,
   options?: ServerFetchOptions,
 ): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
   
-  if (!baseUrl || baseUrl === 'https://example.com') {
+  // Only validate if baseUrl is set but using default value
+  if (baseUrl === 'https://example.com') {
     throw new Error(
-      `NEXT_PUBLIC_API_BASE_URL is not set or is using default value.\n` +
+      `NEXT_PUBLIC_API_BASE_URL is using default value.\n` +
       `Please create a .env.local file in the project root with:\n` +
       `NEXT_PUBLIC_API_BASE_URL=https://prediction-backend-production-8f6c.up.railway.app\n\n` +
-      `Current value: ${baseUrl || '(not set)'}`,
+      `Current value: ${baseUrl}`,
+    );
+  }
+  
+  // If baseUrl is not set, allow it (for build time) but return a helpful error at runtime
+  if (!baseUrl) {
+    throw new Error(
+      `NEXT_PUBLIC_API_BASE_URL is not set.\n` +
+      `Please create a .env.local file in the project root with:\n` +
+      `NEXT_PUBLIC_API_BASE_URL=https://prediction-backend-production-8f6c.up.railway.app`,
     );
   }
 

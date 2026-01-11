@@ -4,12 +4,7 @@
  */
 
 import { getAuthToken } from "@/core/auth/cookies";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
+import { getApiBaseUrl } from "./getApiBaseUrl";
 
 interface BffFetchOptions extends Omit<RequestInit, "body"> {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -35,6 +30,7 @@ export async function bffFetch(
   const { method = "GET", body, headers = {}, ...restOptions } = options;
 
   // Construct full URL
+  const API_BASE_URL = getApiBaseUrl();
   const url = path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
 
   // Prepare headers

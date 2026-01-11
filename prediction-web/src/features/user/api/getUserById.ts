@@ -4,12 +4,7 @@
  */
 
 import type { User } from "../types/user";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
 /**
  * Note: In Server Components, we can call BFF route handlers directly
