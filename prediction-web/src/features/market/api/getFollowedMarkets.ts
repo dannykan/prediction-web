@@ -39,7 +39,7 @@ export async function getFollowedMarkets(
       },
     );
 
-    return backendMarkets.map(normalizeMarket);
+    return backendMarkets.map((market) => normalizeMarket(market as any));
   } catch (error: any) {
     // If the error is 401, it means not authenticated, return empty array silently
     if (error.status === 401 || error.message?.includes("401")) {

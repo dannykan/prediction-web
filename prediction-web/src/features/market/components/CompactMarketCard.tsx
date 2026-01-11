@@ -406,7 +406,7 @@ export function CompactMarketCard({ market, index }: CompactMarketCardProps) {
               {/* Bottom Row - Probability & Bet Button */}
               <div className="flex items-center justify-between gap-2">
                 {/* Probability Bar */}
-                {questionType === 'binary' ? (
+                {questionType === 'YES_NO' ? (
                   <div className="flex items-center gap-1">
                     <span
                       className="font-bold text-[#00FFFF]"
