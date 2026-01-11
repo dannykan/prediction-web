@@ -24,14 +24,32 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
       
+      - name: 🔍 Debug directory structure
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing files:"
+          ls -la
+          echo "Checking for prediction-web:"
+          if [ -d "prediction-web" ]; then
+            echo "prediction-web directory exists"
+            ls -la prediction-web/ | head -10
+          else
+            echo "prediction-web directory does not exist"
+          fi
+      
       - name: 🐹 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
       
       - name: 📦 Install dependencies
-        working-directory: ./prediction-web
         run: |
+          cd prediction-web || {
+            echo "Error: prediction-web directory not found"
+            echo "Current directory contents:"
+            ls -la
+            exit 1
+          }
           if [ -f package-lock.json ]; then
             echo "Found package-lock.json, using npm ci"
             npm ci
@@ -41,8 +59,9 @@ jobs:
           fi
       
       - name: 🔨 Build
-        working-directory: ./prediction-web
-        run: npm run build
+        run: |
+          cd prediction-web
+          npm run build
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
