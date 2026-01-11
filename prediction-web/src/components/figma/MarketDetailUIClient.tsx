@@ -183,7 +183,7 @@ export function MarketDetailUIClient({
     name: user.displayName || user.username || '用戶',
     avatar: user.avatarUrl || 'https://i.pravatar.cc/150?u=anonymous',
     totalAssets: userStatistics.statistics.profitRate.total.totalAssets,
-    inviteCode: user.referralCode,
+    inviteCode: user.referralCode ?? undefined,
   } : undefined;
 
   return (

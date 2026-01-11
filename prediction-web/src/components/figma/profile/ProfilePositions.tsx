@@ -47,7 +47,7 @@ export function ProfilePositions({ positions, userId }: ProfilePositionsProps) {
       if (questionType === 'SINGLE_CHOICE' || questionType === 'SINGLE') {
         // Single choice: use exclusive market
         const exclusiveMarket = await getExclusiveMarketByMarketId(position.marketId);
-        if (!exclusiveMarket || !exclusiveMarket.id) {
+        if (!exclusiveMarket || !exclusiveMarket.exclusiveMarketId) {
           throw new Error('無法找到對應的獨佔市場');
         }
         
@@ -56,17 +56,20 @@ export function ProfilePositions({ positions, userId }: ProfilePositionsProps) {
           o => o.optionId === position.optionId && o.type === 'OPTION'
         );
         
-        if (!outcome || !outcome.id) {
+        if (!outcome || !outcome.outcomeId) {
           throw new Error('無法找到對應的選項');
         }
         
         // Sell all shares
-        await tradeExclusiveMarket({
-          exclusiveMarketId: exclusiveMarket.id,
-          outcomeId: outcome.id,
-          side: position.side === 'YES' ? 'SELL_YES' : 'SELL_NO',
-          shares: parseFloat(position.shares),
-        });
+        await tradeExclusiveMarket(
+          exclusiveMarket.exclusiveMarketId,
+          {
+            outcomeId: outcome.outcomeId,
+            side: position.side === 'YES' ? 'SELL_YES' : 'SELL_NO',
+            amountType: 'SHARES',
+            amount: position.shares,
+          }
+        );
       } else {
         // YES_NO or MULTIPLE_CHOICE: use option market
         if (!position.optionMarketId) {
@@ -74,11 +77,14 @@ export function ProfilePositions({ positions, userId }: ProfilePositionsProps) {
         }
         
         // Sell all shares
-        await tradeOptionMarket({
-          optionMarketId: position.optionMarketId,
-          side: position.side === 'YES' ? 'SELL_YES' : 'SELL_NO',
-          shares: parseFloat(position.shares),
-        });
+        await tradeOptionMarket(
+          position.optionMarketId,
+          {
+            side: position.side === 'YES' ? 'SELL_YES' : 'SELL_NO',
+            amountType: 'SHARES',
+            amount: position.shares,
+          }
+        );
       }
       
       // Reload page to refresh positions
