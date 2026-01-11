@@ -92,7 +92,7 @@ export function Sidebar({ isOpen: controlledIsOpen, onToggle }: SidebarProps) {
     { icon: Plus, label: "創建問題", href: "/create-question", requiresAuth: true },
     { icon: Gift, label: "任務", href: "/quests", requiresAuth: true },
     { icon: Bell, label: "通知", href: "/notifications", requiresAuth: true },
-    { icon: User, label: "我的", href: "/profile", requiresAuth: true },
+    { icon: UserIcon, label: "我的", href: "/profile", requiresAuth: true },
     // Removed Settings - { icon: Settings, label: "設定", href: "/settings", requiresAuth: true },
   ];
 
