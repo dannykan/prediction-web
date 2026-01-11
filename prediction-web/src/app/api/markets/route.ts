@@ -7,11 +7,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +17,7 @@ export async function GET(request: NextRequest) {
     
     // Build query string (preserve all query params)
     const queryString = searchParams.toString();
-    const backendUrl = `${API_BASE_URL}/markets${queryString ? `?${queryString}` : ""}`;
+    const backendUrl = `${getApiBaseUrl()}/markets${queryString ? `?${queryString}` : ""}`;
 
     // Forward to backend
     const response = await fetch(backendUrl, {
@@ -63,7 +60,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Forward to backend
-    const response = await fetch(`${API_BASE_URL}/markets`, {
+    const response = await fetch(`${getApiBaseUrl()}/markets`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

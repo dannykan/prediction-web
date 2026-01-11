@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function POST(
   request: NextRequest,
@@ -20,7 +17,7 @@ export async function POST(
     const { id } = await params;
     const body = await request.json();
 
-    const response = await fetch(`${API_BASE_URL}/exclusive-markets/${id}/trade`, {
+    const response = await fetch(`${getApiBaseUrl()}/exclusive-markets/${id}/trade`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

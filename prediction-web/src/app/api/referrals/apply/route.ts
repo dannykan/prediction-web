@@ -6,11 +6,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +29,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Forward to backend
-    const backendUrl = `${API_BASE_URL}/referrals/apply?userId=${encodeURIComponent(userId)}`;
+    const backendUrl = `${getApiBaseUrl()}/referrals/apply?userId=${encodeURIComponent(userId)}`;
     
     const response = await fetch(backendUrl, {
       method: "POST",

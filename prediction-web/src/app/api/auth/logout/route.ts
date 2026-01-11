@@ -6,7 +6,8 @@
 import { NextResponse } from "next/server";
 import { clearAuthToken } from "@/core/auth/cookies";
 
-export async function POST() {
+
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";export async function POST() {
   try {
     await clearAuthToken();
     return NextResponse.json({ ok: true });

@@ -5,7 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";export async function GET(request: NextRequest) {
   // Bet API deprecated - using LMSR now, return empty array
   return NextResponse.json([]);
 }

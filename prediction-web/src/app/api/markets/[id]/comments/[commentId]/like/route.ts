@@ -5,11 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function POST(
   request: NextRequest,
@@ -37,7 +34,7 @@ export async function POST(
     
     const queryString = `?userId=${encodeURIComponent(userId)}`;
     // Backend route is POST /comments/:id/like (not /markets/:id/comments/:commentId/like)
-    const backendUrl = `${API_BASE_URL}/comments/${encodeURIComponent(commentId)}/like${queryString}`;
+    const backendUrl = `${getApiBaseUrl()}/comments/${encodeURIComponent(commentId)}/like${queryString}`;
 
     const response = await fetch(backendUrl, {
       method: "POST",

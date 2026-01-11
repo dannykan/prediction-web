@@ -6,11 +6,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setAuthToken } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +53,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward to backend
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const API_BASE_URL = getApiBaseUrl();
+    const response = await fetch(`${getApiBaseUrl()}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

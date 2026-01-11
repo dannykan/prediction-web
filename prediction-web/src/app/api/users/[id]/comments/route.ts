@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 /**
  * GET /api/users/[id]/comments
@@ -47,7 +44,7 @@ export async function GET(
       queryParams.append('currentUserId', currentUserId);
     }
 
-    const response = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(id)}/comments?${queryParams.toString()}`, {
+    const response = await fetch(`${getApiBaseUrl()}/users/${encodeURIComponent(id)}/comments?${queryParams.toString()}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

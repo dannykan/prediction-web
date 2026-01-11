@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { marketId } = await params;
-    const response = await fetch(`${API_BASE_URL}/option-markets/market/${marketId}`, {
+    const response = await fetch(`${getApiBaseUrl()}/option-markets/market/${marketId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

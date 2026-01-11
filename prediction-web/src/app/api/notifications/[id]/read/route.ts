@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 /**
  * PUT /api/notifications/[id]/read
@@ -37,7 +34,7 @@ export async function PUT(
     }
 
     // Backend expects userId as query parameter, not in body
-    const response = await fetch(`${API_BASE_URL}/notifications/${encodeURIComponent(id)}/read?userId=${encodeURIComponent(userId)}`, {
+    const response = await fetch(`${getApiBaseUrl()}/notifications/${encodeURIComponent(id)}/read?userId=${encodeURIComponent(userId)}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

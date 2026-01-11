@@ -6,11 +6,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +29,7 @@ export async function GET(request: NextRequest) {
     if (season) queryParams.append("season", season);
 
     const queryString = queryParams.toString();
-    const backendUrl = `${API_BASE_URL}/users/leaderboard/my-rank${queryString ? `?${queryString}` : ""}`;
+    const backendUrl = `${getApiBaseUrl()}/users/leaderboard/my-rank${queryString ? `?${queryString}` : ""}`;
     
     const response = await fetch(backendUrl, {
       method: "GET",

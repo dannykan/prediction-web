@@ -8,11 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 /**
  * POST /api/markets/[id]/follow
@@ -47,7 +44,7 @@ export async function POST(
     }
 
     // Forward to backend
-    const backendUrl = `${API_BASE_URL}/markets/${encodeURIComponent(id)}/follow?userId=${encodeURIComponent(userId)}`;
+    const backendUrl = `${getApiBaseUrl()}/markets/${encodeURIComponent(id)}/follow?userId=${encodeURIComponent(userId)}`;
 
     const response = await fetch(backendUrl, {
       method: "POST",
@@ -112,7 +109,7 @@ export async function DELETE(
     }
 
     // Forward to backend
-    const backendUrl = `${API_BASE_URL}/markets/${encodeURIComponent(id)}/follow?userId=${encodeURIComponent(userId)}`;
+    const backendUrl = `${getApiBaseUrl()}/markets/${encodeURIComponent(id)}/follow?userId=${encodeURIComponent(userId)}`;
 
     const response = await fetch(backendUrl, {
       method: "DELETE",

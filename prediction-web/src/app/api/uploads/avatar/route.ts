@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +22,7 @@ export async function POST(request: NextRequest) {
     const backendFormData = new FormData();
     backendFormData.append("file", file);
 
-    const response = await fetch(`${API_BASE_URL}/uploads/avatar`, {
+    const response = await fetch(`${getApiBaseUrl()}/uploads/avatar`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

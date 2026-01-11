@@ -5,11 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function GET(
   request: NextRequest,
@@ -25,7 +22,7 @@ export async function GET(
       );
     }
 
-    const backendUrl = `${API_BASE_URL}/option-markets/market/${encodeURIComponent(marketId)}/all-trades`;
+    const backendUrl = `${getApiBaseUrl()}/option-markets/market/${encodeURIComponent(marketId)}/all-trades`;
 
     const response = await fetch(backendUrl, {
       method: "GET",

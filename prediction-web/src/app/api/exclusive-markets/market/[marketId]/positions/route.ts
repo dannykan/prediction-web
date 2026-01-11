@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function GET(
   request: NextRequest,
@@ -20,7 +17,7 @@ export async function GET(
     // Note: This endpoint requires authentication, but we allow it to return empty array
     // if user is not authenticated (for better UX)
     const response = await fetch(
-      `${API_BASE_URL}/exclusive-markets/market/${marketId}/positions`,
+      `${getApiBaseUrl()}/exclusive-markets/market/${marketId}/positions`,
       {
         method: "GET",
         headers: {

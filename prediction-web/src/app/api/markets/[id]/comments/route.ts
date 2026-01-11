@@ -6,11 +6,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 export async function GET(
   request: NextRequest,
@@ -31,7 +28,7 @@ export async function GET(
     
     // Build query string (preserve all query params)
     const queryString = searchParams.toString();
-    const backendUrl = `${API_BASE_URL}/markets/${encodeURIComponent(id)}/comments${queryString ? `?${queryString}` : ""}`;
+    const backendUrl = `${getApiBaseUrl()}/markets/${encodeURIComponent(id)}/comments${queryString ? `?${queryString}` : ""}`;
 
     // Forward to backend
     const response = await fetch(backendUrl, {
@@ -83,7 +80,7 @@ export async function POST(
     const userId = searchParams.get("userId");
     
     const queryString = userId ? `?userId=${encodeURIComponent(userId)}` : "";
-    const backendUrl = `${API_BASE_URL}/markets/${encodeURIComponent(id)}/comments${queryString}`;
+    const backendUrl = `${getApiBaseUrl()}/markets/${encodeURIComponent(id)}/comments${queryString}`;
 
     const response = await fetch(backendUrl, {
       method: "POST",

@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthToken } from "@/core/auth/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
-}
 
 /**
  * GET /api/users/leaderboard
@@ -36,7 +33,7 @@ export async function GET(request: NextRequest) {
     if (userId) queryParams.append("userId", userId);
 
     const queryString = queryParams.toString();
-    const backendUrl = `${API_BASE_URL}/users/leaderboard${queryString ? `?${queryString}` : ""}`;
+    const backendUrl = `${getApiBaseUrl()}/users/leaderboard${queryString ? `?${queryString}` : ""}`;
 
     // Get auth token for authenticated requests
     const token = await getAuthToken();
