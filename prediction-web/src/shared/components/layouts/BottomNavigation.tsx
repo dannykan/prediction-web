@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Trophy, User, Bell, Menu, LogIn } from "lucide-react";
+import { Home, Trophy, User as UserIcon, Bell, Menu, LogIn } from "lucide-react";
 import { getMe } from "@/features/user/api/getMe";
 import { signInWithGooglePopup } from "@/core/auth/googleSignIn";
 import { useEffect, useState } from "react";
@@ -19,7 +19,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: Home, label: "瀏覽", href: "/home" },
   { icon: Trophy, label: "排行榜", href: "/leaderboard" },
-  { icon: User, label: "我的", href: "/profile", requiresAuth: true, type: "avatar" },
+  { icon: UserIcon, label: "我的", href: "/profile", requiresAuth: true, type: "avatar" },
   { icon: Bell, label: "通知", href: "/notifications", requiresAuth: true },
   { icon: Menu, label: "選單", href: "/menu" },
 ];
