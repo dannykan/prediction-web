@@ -1559,7 +1559,7 @@ export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
               <ProbabilityChart 
                 marketId={marketId}
                 isSingle={false}
-                questionType="multiple"
+                questionType="MULTIPLE_CHOICE"
                 marketOptions={market?.options || []}
                 selectedOptionIds={Array.from(selectedOptionsForChart)}
                 optionMarkets={optionMarkets.map(om => ({
