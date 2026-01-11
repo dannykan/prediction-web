@@ -35,7 +35,7 @@ export function MarketCardClient({ market, commentsCount }: MarketCardClientProp
       try {
         const questionType = market.questionType;
         
-        if (questionType === 'YES_NO' || questionType === 'binary') {
+        if (questionType === 'YES_NO') {
           // YES_NO: 獲取第一個選項（通常是「是」選項）的 Yes 機率
           // YES_NO 市場的每個選項都有自己的 option market
           const optionMarkets = await getOptionMarketsByMarketId(market.id);
