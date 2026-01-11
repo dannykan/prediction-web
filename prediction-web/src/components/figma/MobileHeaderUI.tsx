@@ -1,0 +1,61 @@
+"use client";
+
+import { Menu } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { formatNumber } from '@/utils/formatNumber';
+
+interface MobileHeaderUIProps {
+  onMenuClick: () => void;
+  isLoggedIn: boolean;
+  user?: {
+    totalAssets: number;
+    avatar: string;
+  };
+}
+
+export function MobileHeaderUI({ onMenuClick, isLoggedIn, user }: MobileHeaderUIProps) {
+  return (
+    <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-20 lg:hidden">
+      <div className="flex items-center justify-between h-full px-4">
+        <button 
+          onClick={onMenuClick}
+          className="p-2 text-slate-600 hover:text-slate-800"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        
+        <Link href="/home" className="flex items-center gap-2">
+          <Image 
+            src="/images/logo.png?v=2" 
+            alt="神預測 Logo" 
+            width={32} 
+            height={32}
+            className="w-8 h-8 object-contain rounded-lg"
+            priority
+            unoptimized
+          />
+          <div>
+            <h1 className="font-bold text-base text-slate-800 leading-tight">神預測</h1>
+            <p className="text-[10px] text-slate-500 leading-tight">Prediction God</p>
+          </div>
+        </Link>
+
+        {isLoggedIn && user ? (
+          <div className="flex items-center gap-2">
+            <Image 
+              src="/images/G_coin_icon.png" 
+              alt="G coin" 
+              width={20} 
+              height={20}
+              className="w-5 h-5"
+            />
+            <span className="font-bold text-amber-600 text-sm">{formatNumber(user.totalAssets)}</span>
+          </div>
+        ) : (
+          <div className="w-10" />
+        )}
+      </div>
+    </header>
+  );
+}

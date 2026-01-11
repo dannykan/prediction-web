@@ -1,0 +1,96 @@
+/**
+ * GET /api/markets - List markets
+ * POST /api/markets - Create market
+ * Forward to backend /markets
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthTokenFromRequest } from "@/core/auth/cookies";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+if (!API_BASE_URL) {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get query parameters from request
+    const searchParams = request.nextUrl.searchParams;
+    
+    // Build query string (preserve all query params)
+    const queryString = searchParams.toString();
+    const backendUrl = `${API_BASE_URL}/markets${queryString ? `?${queryString}` : ""}`;
+
+    // Forward to backend
+    const response = await fetch(backendUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      // Allow caching for public markets
+      next: { revalidate: 60 },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        error: "Backend request failed",
+      }));
+      return NextResponse.json(errorData, { status: response.status });
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("[API /api/markets] Error:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Internal server error",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const token = await getAuthTokenFromRequest(request);
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+
+    // Forward to backend
+    const response = await fetch(`${API_BASE_URL}/markets`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      cache: "no-store", // Don't cache POST requests
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        error: "Backend request failed",
+      }));
+      return NextResponse.json(errorData, { status: response.status });
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    console.error("[API /api/markets POST] Error:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Internal server error",
+      },
+      { status: 500 },
+    );
+  }
+}
+

@@ -1,0 +1,52 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthTokenFromRequest } from "@/core/auth/cookies";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+if (!API_BASE_URL) {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const token = await getAuthTokenFromRequest(request);
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
+
+    if (!file) {
+      return NextResponse.json({ error: "File is required" }, { status: 400 });
+    }
+
+    // Forward to backend
+    const backendFormData = new FormData();
+    backendFormData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/uploads/market-image`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Don't set Content-Type, let fetch set it with boundary
+      },
+      body: backendFormData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: "Backend error" }));
+      return NextResponse.json(errorData, { status: response.status });
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("[API /api/uploads/market-image] Error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
