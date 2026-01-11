@@ -5,10 +5,12 @@ on:
     branches: [main, master]
     paths:
       - 'prediction-web/**'
+      - '.github/workflows/deploy-cloudflare.yml'
   pull_request:
     branches: [main, master]
     paths:
       - 'prediction-web/**'
+      - '.github/workflows/deploy-cloudflare.yml'
   workflow_dispatch:
 
 jobs:
