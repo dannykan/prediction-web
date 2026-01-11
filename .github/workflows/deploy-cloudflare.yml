@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
       
       - name: 🐹 Setup Node.js
         uses: actions/setup-node@v4
@@ -33,8 +35,10 @@ jobs:
         working-directory: ./prediction-web
         run: |
           if [ -f package-lock.json ]; then
+            echo "Found package-lock.json, using npm ci"
             npm ci
           else
+            echo "No package-lock.json found, using npm install"
             npm install
           fi
       
