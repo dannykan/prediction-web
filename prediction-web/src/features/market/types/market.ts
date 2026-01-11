@@ -28,7 +28,6 @@ export interface Market {
     name: string;
   }>;
   participantsCount?: number;
-  commentsCount?: number;
   category?: {
     id: string;
     name: string;
