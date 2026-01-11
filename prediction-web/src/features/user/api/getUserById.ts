@@ -17,6 +17,7 @@ import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 export async function getUserById(userId: string): Promise<User | null> {
   try {
     // Call backend directly (BFF route handler is for client components)
+    const API_BASE_URL = getApiBaseUrl();
     const response = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(userId)}`, {
       method: "GET",
       headers: {

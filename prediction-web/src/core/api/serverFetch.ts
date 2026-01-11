@@ -32,7 +32,7 @@ export async function serverFetch<T = unknown>(
     );
   }
   
-  // If baseUrl is not set, allow it (for build time) but return a helpful error at runtime
+  // If baseUrl is not set, throw error at runtime
   if (!baseUrl) {
     throw new Error(
       `NEXT_PUBLIC_API_BASE_URL is not set.\n` +

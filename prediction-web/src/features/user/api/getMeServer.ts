@@ -15,6 +15,7 @@ export async function getMeServer(): Promise<User | null> {
       return null; // Not authenticated
     }
 
+    const API_BASE_URL = getApiBaseUrl();
     const response = await fetch(`${API_BASE_URL}/me`, {
       method: "GET",
       headers: {
