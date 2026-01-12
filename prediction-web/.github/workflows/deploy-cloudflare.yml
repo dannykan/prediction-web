@@ -35,7 +35,7 @@ jobs:
       
       - name: 🔨 Build
         working-directory: ./prediction-web
-        run: npm run build
+        run: npm run build:cloudflare
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
@@ -46,6 +46,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: predictiongod
-          directory: prediction-web/.next
+          directory: prediction-web/.open-next
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: '3'
