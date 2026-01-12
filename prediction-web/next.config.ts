@@ -12,13 +12,9 @@ const nextConfig: NextConfig = {
         hostname: "**",
       },
     ],
-    // 启用图片优化（Cloudflare 支持）
-    unoptimized: false,
-    // 图片格式优化
-    formats: ['image/avif', 'image/webp'],
-    // 设备尺寸断点
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Cloudflare Pages 不支持 Next.js 内置图片优化
+    // 必须设置为 true 以避免 Worker 异常
+    unoptimized: true,
   },
 };
 

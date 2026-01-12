@@ -16,19 +16,19 @@
 
 **效果：** 浏览器可以正确缓存图片，不会每次都重新加载。
 
-### 2. ✅ 启用 Next.js 图片优化
+### 2. ✅ 配置图片优化（Cloudflare 限制）
 
-**问题：** 使用了 `unoptimized` 属性，跳过了 Next.js 的图片优化。
+**问题：** Cloudflare Pages 不支持 Next.js 内置图片优化。
 
 **修复：**
-- 移除了 `unoptimized` 属性
-- 在 `next.config.ts` 中配置了图片优化选项
-- 启用了 AVIF 和 WebP 格式支持
+- 保持 `unoptimized: true`（Cloudflare Pages 要求）
+- 通过 `_headers` 文件设置缓存策略来优化性能
+- 静态图片会被浏览器长期缓存
 
-**效果：** 
-- 图片自动优化为更小的格式（AVIF/WebP）
-- 响应式图片加载
-- 更好的性能
+**注意：** 
+- Cloudflare Pages 不支持 Next.js 的 `/next/image` 路由
+- 图片优化通过浏览器缓存来实现
+- 如果需要图片优化，可以考虑使用 Cloudflare Images 服务
 
 ### 3. ✅ 添加静态资源缓存头
 
