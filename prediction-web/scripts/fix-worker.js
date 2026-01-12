@@ -6,8 +6,7 @@ let workerContent = fs.readFileSync('.open-next/worker.js', 'utf8');
 
 // Add static asset handling before middleware
 // This ensures CSS, JS, images, and fonts are served correctly
-const staticAssetHandling = `
-            // Serve static assets first (CSS, JS, images, fonts, etc.)
+const staticAssetHandling = `            // Serve static assets first (CSS, JS, images, fonts, etc.)
             // This ensures static files are served before middleware/routing
             if (url.pathname.startsWith("/_next/static/") || 
                 url.pathname.startsWith("/images/") ||
@@ -20,13 +19,23 @@ const staticAssetHandling = `
                 }
             }
             
-`;
+            `;
 
 // Insert static asset handling after the URL creation and before image handling
-workerContent = workerContent.replace(
-    /(const url = new URL\(request\.url\);\s*)(\/\/ Serve images in development\.)/,
-    `$1${staticAssetHandling}$2`
-);
+// Match: "const url = new URL(request.url);" followed by optional whitespace and then "// Serve images"
+const pattern = /(const url = new URL\(request\.url\);\s*)(\/\/ Serve images in development\.)/;
+if (pattern.test(workerContent)) {
+    workerContent = workerContent.replace(pattern, `$1${staticAssetHandling}$2`);
+    console.log('Added static asset handling to _worker.js');
+} else {
+    console.warn('Warning: Could not find insertion point for static asset handling');
+    // Fallback: try to insert after URL creation
+    workerContent = workerContent.replace(
+        /(const url = new URL\(request\.url\);\s*)/,
+        `$1${staticAssetHandling}`
+    );
+    console.log('Added static asset handling using fallback method');
+}
 
 fs.writeFileSync('.open-next/_worker.js', workerContent);
 
