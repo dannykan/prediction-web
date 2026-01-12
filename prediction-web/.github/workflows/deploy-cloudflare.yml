@@ -26,9 +26,11 @@ jobs:
           cache: 'npm'
       
       - name: 📦 Install dependencies
+        working-directory: prediction-web
         run: npm ci
       
       - name: 🔨 Build for Cloudflare
+        working-directory: prediction-web
         run: npm run build:cloudflare
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
@@ -41,6 +43,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: predictiongod
-          directory: .open-next
+          directory: prediction-web/.open-next
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: main
