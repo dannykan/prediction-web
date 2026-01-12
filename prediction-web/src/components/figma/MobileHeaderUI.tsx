@@ -4,6 +4,7 @@ import { Menu } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatNumber } from '@/utils/formatNumber';
+import { GCoinIcon } from '@/components/GCoinIcon';
 
 interface MobileHeaderUIProps {
   onMenuClick: () => void;
@@ -42,13 +43,7 @@ export function MobileHeaderUI({ onMenuClick, isLoggedIn, user }: MobileHeaderUI
 
         {isLoggedIn && user ? (
           <div className="flex items-center gap-2">
-            <Image 
-              src="/images/G_coin_icon.png" 
-              alt="G coin" 
-              width={20} 
-              height={20}
-              className="w-5 h-5"
-            />
+            <GCoinIcon size={20} priority={true} />
             <span className="font-bold text-amber-600 text-sm">{formatNumber(user.totalAssets)}</span>
           </div>
         ) : (

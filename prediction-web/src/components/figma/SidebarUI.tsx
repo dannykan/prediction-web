@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { formatNumber } from '@/utils/formatNumber';
+import { GCoinIcon } from '@/components/GCoinIcon';
 
 interface SidebarUIProps {
   isOpen: boolean;
@@ -128,13 +129,7 @@ export function SidebarUI({ isOpen, onClose, isLoggedIn, user, onLogin, onLogout
               <div className="flex-1">
                 <p className="font-semibold text-slate-800">{user.name}</p>
                 <div className="flex items-center gap-1 text-sm">
-                  <Image 
-                    src="/images/G_coin_icon.png" 
-                    alt="G coin" 
-                    width={16} 
-                    height={16}
-                    className="w-4 h-4"
-                  />
+                  <GCoinIcon size={16} priority={true} />
                   <span className="font-bold text-amber-600">{formatNumber(user.totalAssets)}</span>
                 </div>
               </div>
