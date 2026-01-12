@@ -64,3 +64,5 @@ build/
 
 # Claude AI
 .claude/
+prediction-app/
+prediction-backend/
