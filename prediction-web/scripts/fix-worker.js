@@ -2,7 +2,32 @@ const fs = require('fs');
 const path = require('path');
 
 // Copy worker.js to _worker.js
-const workerContent = fs.readFileSync('.open-next/worker.js', 'utf8');
+let workerContent = fs.readFileSync('.open-next/worker.js', 'utf8');
+
+// Add static asset handling before middleware
+// This ensures CSS, JS, images, and fonts are served correctly
+const staticAssetHandling = `
+            // Serve static assets first (CSS, JS, images, fonts, etc.)
+            // This ensures static files are served before middleware/routing
+            if (url.pathname.startsWith("/_next/static/") || 
+                url.pathname.startsWith("/images/") ||
+                url.pathname.match(/\\.(woff2|woff|ttf|png|jpg|jpeg|gif|svg|ico|css|js|map)$/)) {
+                if (env.ASSETS) {
+                    const assetResponse = await env.ASSETS.fetch(request);
+                    if (assetResponse.status !== 404) {
+                        return assetResponse;
+                    }
+                }
+            }
+            
+`;
+
+// Insert static asset handling after the URL creation and before image handling
+workerContent = workerContent.replace(
+    /(const url = new URL\(request\.url\);\s*)(\/\/ Serve images in development\.)/,
+    `$1${staticAssetHandling}$2`
+);
+
 fs.writeFileSync('.open-next/_worker.js', workerContent);
 
 // Move assets to root level so they're accessible at the correct paths

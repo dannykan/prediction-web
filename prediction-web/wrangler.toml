@@ -6,3 +6,4 @@ pages_build_output_dir = ".open-next"
 # Cloudflare Pages automatically serves static assets from the output directory
 # When _worker.js is present, it handles dynamic routes
 # Static assets in .open-next/assets are automatically available
+# The ASSETS binding is automatically available in _worker.js when pages_build_output_dir is set
