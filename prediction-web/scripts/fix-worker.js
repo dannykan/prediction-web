@@ -38,29 +38,18 @@ const staticAssetHandler = `
             }
 `;
 
-// Find the insertion points
+// Ensure url is defined at the start
 const urlDefinition = 'const url = new URL(request.url);';
-const insertAfter = `if (response) {
-                return response;
-            }`;
+const contextStart = 'return runWithCloudflareRequestContext(request, env, ctx, async () => {';
 
-// Check if url is defined before the static asset handler
-const urlBeforeHandler = workerContent.indexOf(urlDefinition) < workerContent.indexOf(insertAfter);
-
-if (!urlBeforeHandler) {
-  // Move url definition before skew protection check
+// Check if url is already defined right after context start
+if (!workerContent.includes(`${contextStart}\n            ${urlDefinition}`)) {
+  // Add url definition right after context start
   workerContent = workerContent.replace(
-    'const response = maybeGetSkewProtectionResponse(request);',
-    `${urlDefinition}\n            const response = maybeGetSkewProtectionResponse(request);`
+    contextStart,
+    `${contextStart}\n            ${urlDefinition}`
   );
-
-  // Remove duplicate url definition if it exists later
-  const laterUrlIndex = workerContent.indexOf(urlDefinition, workerContent.indexOf(insertAfter));
-  if (laterUrlIndex !== -1) {
-    workerContent = workerContent.replace(new RegExp(`\\s*${urlDefinition.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'), function(match, offset) {
-      return offset === workerContent.indexOf(urlDefinition) ? match : '';
-    });
-  }
+  console.log('   Added url definition at start of handler');
 }
 
 if (!workerContent.includes(insertAfter)) {
