@@ -1,106 +1,64 @@
+#!/usr/bin/env node
+
+/**
+ * Fix _worker.js to properly serve static assets
+ *
+ * This script adds static asset handling to the _worker.js file
+ * to ensure _next/static/* files are served directly from ASSETS
+ */
+
 const fs = require('fs');
 const path = require('path');
 
-// Copy worker.js to _worker.js
-let workerContent = fs.readFileSync('.open-next/worker.js', 'utf8');
+const WORKER_PATH = path.join(process.cwd(), '.open-next', '_worker.js');
 
-// NOTE: Static asset handling code is temporarily disabled
-// It may be causing Worker Error 1101 in some deployments
-// Static assets should be served by Cloudflare Pages automatically via env.ASSETS
-// If needed, we can re-enable this with better error handling
+console.log('🔧 Fixing _worker.js to serve static assets...');
 
-// Add static asset handling before middleware (DISABLED - testing)
-// const staticAssetHandling = `            // Serve static assets first (CSS, JS, images, fonts, etc.)
-//             // This ensures static files are served before middleware/routing
-//             if (url.pathname.startsWith("/_next/static/") || 
-//                 url.pathname.startsWith("/images/") ||
-//                 url.pathname.match(/\\.(woff2|woff|ttf|png|jpg|jpeg|gif|svg|ico|css|js|map)$/)) {
-//                 if (env.ASSETS) {
-//                     const assetResponse = await env.ASSETS.fetch(request);
-//                     if (assetResponse.status !== 404) {
-//                         return assetResponse;
-//                     }
-//                 }
-//             }
-//             
-//             `;
-//
-// const pattern = /(const url = new URL\(request\.url\);\s*)(\/\/ Serve images in development\.)/;
-// if (pattern.test(workerContent)) {
-//     workerContent = workerContent.replace(pattern, `$1${staticAssetHandling}$2`);
-//     console.log('Added static asset handling to _worker.js');
-// } else {
-//     console.warn('Warning: Could not find insertion point for static asset handling');
-//     workerContent = workerContent.replace(
-//         /(const url = new URL\(request\.url\);\s*)/,
-//         `$1${staticAssetHandling}`
-//     );
-//     console.log('Added static asset handling using fallback method');
-// }
+if (!fs.existsSync(WORKER_PATH)) {
+  console.error('❌ _worker.js not found!');
+  process.exit(1);
+}
 
-// Fix potential undefined globalThis variables that cause Error 1101
-// Replace unsafe globalThis usage with safe null checks
-// Pattern: `${globalThis.__NEXT_BASE_PATH__}/_next/image${globalThis.__TRAILING_SLASH__ ? "/" : ""}`
+// Read the current worker file
+let workerContent = fs.readFileSync(WORKER_PATH, 'utf8');
+
+// Check if already patched
+if (workerContent.includes('// Static asset handling')) {
+  console.log('✅ _worker.js already patched');
+  process.exit(0);
+}
+
+// Create the static asset handling code
+const staticAssetHandler = `
+            // Static asset handling - serve from ASSETS binding
+            if (url.pathname.startsWith("/_next/static/") ||
+                url.pathname.startsWith("/images/") ||
+                url.pathname.match(/\\.(css|js|woff2?|png|jpg|jpeg|gif|svg|ico)$/)) {
+                return env.ASSETS?.fetch(request) || new Response("Not Found", { status: 404 });
+            }
+`;
+
+// Find the insertion point (after the skew protection check)
+const insertAfter = `if (response) {
+                return response;
+            }`;
+
+if (!workerContent.includes(insertAfter)) {
+  console.error('❌ Could not find insertion point in _worker.js');
+  process.exit(1);
+}
+
+// Insert the static asset handler
 workerContent = workerContent.replace(
-    /\$\{globalThis\.__NEXT_BASE_PATH__\}/g,
-    '${(globalThis.__NEXT_BASE_PATH__ || "")}'
-);
-workerContent = workerContent.replace(
-    /globalThis\.__TRAILING_SLASH__ \? "\/" : ""/g,
-    '(globalThis.__TRAILING_SLASH__ ? "/" : "")'
+  insertAfter,
+  insertAfter + staticAssetHandler
 );
 
-fs.writeFileSync('.open-next/_worker.js', workerContent);
+// Write the modified worker file
+fs.writeFileSync(WORKER_PATH, workerContent, 'utf8');
 
-// Move assets to root level so they're accessible at the correct paths
-// Next.js expects /_next/static/ but OpenNext puts them in assets/_next/static/
-const assetsDir = '.open-next/assets';
-const targetDir = '.open-next';
-
-// Copy _next directory from assets to root
-if (fs.existsSync(path.join(assetsDir, '_next'))) {
-  const nextDir = path.join(targetDir, '_next');
-  if (fs.existsSync(nextDir)) {
-    fs.rmSync(nextDir, { recursive: true, force: true });
-  }
-  fs.cpSync(path.join(assetsDir, '_next'), nextDir, { recursive: true });
-  console.log('Copied _next directory from assets to root');
-}
-
-// Copy images directory
-if (fs.existsSync(path.join(assetsDir, 'images'))) {
-  const imagesDir = path.join(targetDir, 'images');
-  if (fs.existsSync(imagesDir)) {
-    fs.rmSync(imagesDir, { recursive: true, force: true });
-  }
-  fs.cpSync(path.join(assetsDir, 'images'), imagesDir, { recursive: true });
-  console.log('Copied images directory from assets to root');
-}
-
-// Copy other root-level files from assets
-const rootFiles = ['favicon.ico', '_redirects', 'BUILD_ID'];
-rootFiles.forEach(file => {
-  const src = path.join(assetsDir, file);
-  const dest = path.join(targetDir, file);
-  if (fs.existsSync(src)) {
-    fs.copyFileSync(src, dest);
-    console.log(`Copied ${file} from assets to root`);
-  }
-});
-
-// Note: _headers file is disabled to prevent Worker Error 1101
-// When _worker.js exists, _headers may conflict with Worker behavior
-// Cache headers can be set in Worker code or Cloudflare Dashboard instead
-
-// Copy wrangler.toml to .open-next for wrangler pages deploy command
-// This ensures wrangler can find the configuration when deploying
-const wranglerTomlPath = path.join(__dirname, '..', 'wrangler.toml');
-const targetWranglerTomlPath = path.join(targetDir, 'wrangler.toml');
-if (fs.existsSync(wranglerTomlPath)) {
-  fs.copyFileSync(wranglerTomlPath, targetWranglerTomlPath);
-  console.log('Copied wrangler.toml to .open-next');
-} else {
-  console.warn('Warning: wrangler.toml not found in project root');
-}
-
-console.log('Created _worker.js and moved static assets to root level');
+console.log('✅ _worker.js patched successfully');
+console.log('📝 Added static asset handling for:');
+console.log('   - /_next/static/*');
+console.log('   - /images/*');
+console.log('   - .css, .js, .woff2, .png, etc.');

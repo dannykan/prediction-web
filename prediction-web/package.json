@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
-    "build:cloudflare": "rm -rf .next .open-next && next build && opennextjs-cloudflare build && node scripts/post-build.js",
+    "build:cloudflare": "rm -rf .next .open-next && next build && opennextjs-cloudflare build && node scripts/post-build.js && node scripts/fix-worker.js",
     "build:cloudflare:fast": "next build && opennextjs-cloudflare build && node scripts/post-build.js",
     "start": "next start",
     "lint": "biome lint .",
