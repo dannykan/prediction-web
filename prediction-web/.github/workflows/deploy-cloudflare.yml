@@ -3,12 +3,8 @@ name: Deploy to Cloudflare Pages
 on:
   push:
     branches: [main, master]
-    paths:
-      - 'prediction-web/**'
   pull_request:
     branches: [main, master]
-    paths:
-      - 'prediction-web/**'
   workflow_dispatch:
 
 jobs:
