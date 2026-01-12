@@ -3,6 +3,6 @@ compatibility_date = "2026-01-12"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".open-next"
 
-[assets]
-directory = ".open-next/assets"
-binding = "ASSETS"
+# Cloudflare Pages automatically serves static assets from the output directory
+# When _worker.js is present, it handles dynamic routes
+# Static assets in .open-next/assets are automatically available
