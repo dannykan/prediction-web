@@ -38,7 +38,9 @@ jobs:
       - name: 🚀 Deploy to Cloudflare Pages
         run: |
           npm install -g wrangler@latest
-          wrangler pages deploy .open-next \
+          # Deploy from .open-next directory where wrangler.toml is located
+          cd .open-next
+          wrangler pages deploy . \
             --project-name=predictiongod \
             --branch=main \
             --commit-dirty=true

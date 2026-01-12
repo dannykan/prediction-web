@@ -92,4 +92,15 @@ rootFiles.forEach(file => {
 // When _worker.js exists, _headers may conflict with Worker behavior
 // Cache headers can be set in Worker code or Cloudflare Dashboard instead
 
+// Copy wrangler.toml to .open-next for wrangler pages deploy command
+// This ensures wrangler can find the configuration when deploying
+const wranglerTomlPath = path.join(__dirname, '..', 'wrangler.toml');
+const targetWranglerTomlPath = path.join(targetDir, 'wrangler.toml');
+if (fs.existsSync(wranglerTomlPath)) {
+  fs.copyFileSync(wranglerTomlPath, targetWranglerTomlPath);
+  console.log('Copied wrangler.toml to .open-next');
+} else {
+  console.warn('Warning: wrangler.toml not found in project root');
+}
+
 console.log('Created _worker.js and moved static assets to root level');
