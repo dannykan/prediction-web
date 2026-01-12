@@ -4,38 +4,39 @@ const path = require('path');
 // Copy worker.js to _worker.js
 let workerContent = fs.readFileSync('.open-next/worker.js', 'utf8');
 
-// Add static asset handling before middleware
-// This ensures CSS, JS, images, and fonts are served correctly
-const staticAssetHandling = `            // Serve static assets first (CSS, JS, images, fonts, etc.)
-            // This ensures static files are served before middleware/routing
-            if (url.pathname.startsWith("/_next/static/") || 
-                url.pathname.startsWith("/images/") ||
-                url.pathname.match(/\\.(woff2|woff|ttf|png|jpg|jpeg|gif|svg|ico|css|js|map)$/)) {
-                if (env.ASSETS) {
-                    const assetResponse = await env.ASSETS.fetch(request);
-                    if (assetResponse.status !== 404) {
-                        return assetResponse;
-                    }
-                }
-            }
-            
-            `;
+// NOTE: Static asset handling code is temporarily disabled
+// It may be causing Worker Error 1101 in some deployments
+// Static assets should be served by Cloudflare Pages automatically via env.ASSETS
+// If needed, we can re-enable this with better error handling
 
-// Insert static asset handling after the URL creation and before image handling
-// Match: "const url = new URL(request.url);" followed by optional whitespace and then "// Serve images"
-const pattern = /(const url = new URL\(request\.url\);\s*)(\/\/ Serve images in development\.)/;
-if (pattern.test(workerContent)) {
-    workerContent = workerContent.replace(pattern, `$1${staticAssetHandling}$2`);
-    console.log('Added static asset handling to _worker.js');
-} else {
-    console.warn('Warning: Could not find insertion point for static asset handling');
-    // Fallback: try to insert after URL creation
-    workerContent = workerContent.replace(
-        /(const url = new URL\(request\.url\);\s*)/,
-        `$1${staticAssetHandling}`
-    );
-    console.log('Added static asset handling using fallback method');
-}
+// Add static asset handling before middleware (DISABLED - testing)
+// const staticAssetHandling = `            // Serve static assets first (CSS, JS, images, fonts, etc.)
+//             // This ensures static files are served before middleware/routing
+//             if (url.pathname.startsWith("/_next/static/") || 
+//                 url.pathname.startsWith("/images/") ||
+//                 url.pathname.match(/\\.(woff2|woff|ttf|png|jpg|jpeg|gif|svg|ico|css|js|map)$/)) {
+//                 if (env.ASSETS) {
+//                     const assetResponse = await env.ASSETS.fetch(request);
+//                     if (assetResponse.status !== 404) {
+//                         return assetResponse;
+//                     }
+//                 }
+//             }
+//             
+//             `;
+//
+// const pattern = /(const url = new URL\(request\.url\);\s*)(\/\/ Serve images in development\.)/;
+// if (pattern.test(workerContent)) {
+//     workerContent = workerContent.replace(pattern, `$1${staticAssetHandling}$2`);
+//     console.log('Added static asset handling to _worker.js');
+// } else {
+//     console.warn('Warning: Could not find insertion point for static asset handling');
+//     workerContent = workerContent.replace(
+//         /(const url = new URL\(request\.url\);\s*)/,
+//         `$1${staticAssetHandling}`
+//     );
+//     console.log('Added static asset handling using fallback method');
+// }
 
 // Fix potential undefined globalThis variables that cause Error 1101
 // Replace unsafe globalThis usage with safe null checks
