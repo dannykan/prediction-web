@@ -37,6 +37,18 @@ if (pattern.test(workerContent)) {
     console.log('Added static asset handling using fallback method');
 }
 
+// Fix potential undefined globalThis variables that cause Error 1101
+// Replace unsafe globalThis usage with safe null checks
+// Pattern: `${globalThis.__NEXT_BASE_PATH__}/_next/image${globalThis.__TRAILING_SLASH__ ? "/" : ""}`
+workerContent = workerContent.replace(
+    /\$\{globalThis\.__NEXT_BASE_PATH__\}/g,
+    '${(globalThis.__NEXT_BASE_PATH__ || "")}'
+);
+workerContent = workerContent.replace(
+    /globalThis\.__TRAILING_SLASH__ \? "\/" : ""/g,
+    '(globalThis.__TRAILING_SLASH__ ? "/" : "")'
+);
+
 fs.writeFileSync('.open-next/_worker.js', workerContent);
 
 // Move assets to root level so they're accessible at the correct paths
