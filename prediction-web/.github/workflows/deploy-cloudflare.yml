@@ -1,8 +1,10 @@
 name: Deploy to Cloudflare Pages
 
 on:
-  push:
-    branches: [main]
+  # 暂时禁用 GitHub Actions 部署
+  # 只使用 Cloudflare Pages Git 集成
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 jobs:
