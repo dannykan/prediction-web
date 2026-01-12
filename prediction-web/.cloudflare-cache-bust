@@ -1,0 +1,7 @@
+# Cache Buster
+# This file forces Cloudflare Pages to do a clean rebuild
+# Generated at: Mon Jan 12 2026 22:22:00 GMT+0800
+
+TIMESTAMP=1736690520
+BUILD_VERSION=2.0.0
+FORCE_CLEAN_BUILD=true
