@@ -52,7 +52,23 @@ if (!workerContent.includes(`${contextStart}\n            ${urlDefinition}`)) {
   console.log('   Added url definition at start of handler');
 }
 
-// Step 2: Insert static asset handler after skew protection
+// Step 2: Remove any duplicate url definitions that come after our inserted one
+const lines = workerContent.split('\n');
+let foundFirst = false;
+const cleanedLines = lines.filter((line, index) => {
+  if (line.trim() === urlDefinition) {
+    if (!foundFirst) {
+      foundFirst = true;
+      return true; // Keep the first one
+    }
+    console.log(`   Removed duplicate url definition at line ${index + 1}`);
+    return false; // Remove duplicates
+  }
+  return true;
+});
+workerContent = cleanedLines.join('\n');
+
+// Step 3: Insert static asset handler after skew protection
 const insertAfter = `if (response) {
                 return response;
             }`;
