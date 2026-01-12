@@ -75,12 +75,8 @@ rootFiles.forEach(file => {
   }
 });
 
-// Copy _headers file if it exists in public directory
-const publicHeaders = path.join(__dirname, '..', 'public', '_headers');
-const destHeaders = path.join(targetDir, '_headers');
-if (fs.existsSync(publicHeaders)) {
-  fs.copyFileSync(publicHeaders, destHeaders);
-  console.log('Copied _headers from public to root');
-}
+// Note: _headers file is disabled to prevent Worker Error 1101
+// When _worker.js exists, _headers may conflict with Worker behavior
+// Cache headers can be set in Worker code or Cloudflare Dashboard instead
 
 console.log('Created _worker.js and moved static assets to root level');
