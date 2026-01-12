@@ -1,0 +1,3 @@
+# Cloudflare Pages redirects
+# Redirect root path to /home
+/ /home 301
