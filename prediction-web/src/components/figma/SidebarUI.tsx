@@ -86,13 +86,12 @@ export function SidebarUI({ isOpen, onClose, isLoggedIn, user, onLogin, onLogout
           <div className="flex items-center justify-between">
             <Link href="/home" className="flex items-center gap-3">
               <Image 
-                src="/images/logo.png?v=2" 
+                src="/images/logo.png" 
                 alt="神預測 Logo" 
                 width={40} 
                 height={40}
                 className="w-10 h-10 object-contain rounded-lg"
                 priority
-                unoptimized
               />
               <div>
                 <h1 className="font-bold text-xl text-slate-800">神預測</h1>

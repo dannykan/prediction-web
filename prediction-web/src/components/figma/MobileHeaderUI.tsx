@@ -27,13 +27,12 @@ export function MobileHeaderUI({ onMenuClick, isLoggedIn, user }: MobileHeaderUI
         
         <Link href="/home" className="flex items-center gap-2">
           <Image 
-            src="/images/logo.png?v=2" 
+            src="/images/logo.png" 
             alt="神預測 Logo" 
             width={32} 
             height={32}
             className="w-8 h-8 object-contain rounded-lg"
             priority
-            unoptimized
           />
           <div>
             <h1 className="font-bold text-base text-slate-800 leading-tight">神預測</h1>
