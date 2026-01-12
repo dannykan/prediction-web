@@ -55,6 +55,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: predictiongod
-          directory: prediction-web/.next
+          directory: prediction-web
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: '3'
