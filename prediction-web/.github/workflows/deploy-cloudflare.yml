@@ -44,4 +44,3 @@ jobs:
           directory: .open-next
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: main
-          workingDirectory: prediction-web
