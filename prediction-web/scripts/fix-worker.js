@@ -38,7 +38,7 @@ const staticAssetHandler = `
             }
 `;
 
-// Ensure url is defined at the start
+// Step 1: Ensure url is defined at the start
 const urlDefinition = 'const url = new URL(request.url);';
 const contextStart = 'return runWithCloudflareRequestContext(request, env, ctx, async () => {';
 
@@ -51,6 +51,11 @@ if (!workerContent.includes(`${contextStart}\n            ${urlDefinition}`)) {
   );
   console.log('   Added url definition at start of handler');
 }
+
+// Step 2: Insert static asset handler after skew protection
+const insertAfter = `if (response) {
+                return response;
+            }`;
 
 if (!workerContent.includes(insertAfter)) {
   console.error('❌ Could not find insertion point in _worker.js');
