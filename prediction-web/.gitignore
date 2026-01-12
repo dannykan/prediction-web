@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .open-next
+# Prevent accidental submodule addition
+prediction-app/
+prediction-backend/
