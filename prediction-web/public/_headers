@@ -4,30 +4,7 @@
 # 静态图片：长期缓存（1年）
 /images/*
   Cache-Control: public, max-age=31536000, immutable
-  X-Content-Type-Options: nosniff
 
 # Next.js 静态资源：长期缓存（1年）
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
-
-# 字体文件：长期缓存（1年）
-/*.woff2
-  Cache-Control: public, max-age=31536000, immutable
-
-/*.woff
-  Cache-Control: public, max-age=31536000, immutable
-
-/*.ttf
-  Cache-Control: public, max-age=31536000, immutable
-
-# Favicon：短期缓存（1天）
-/favicon.ico
-  Cache-Control: public, max-age=86400
-
-# HTML 文件：不缓存，确保获取最新版本
-/*.html
-  Cache-Control: no-cache, no-store, must-revalidate
-
-# 根路径：不缓存
-/
-  Cache-Control: no-cache, no-store, must-revalidate
