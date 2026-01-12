@@ -38,10 +38,30 @@ const staticAssetHandler = `
             }
 `;
 
-// Find the insertion point (after the skew protection check)
+// Find the insertion points
+const urlDefinition = 'const url = new URL(request.url);';
 const insertAfter = `if (response) {
                 return response;
             }`;
+
+// Check if url is defined before the static asset handler
+const urlBeforeHandler = workerContent.indexOf(urlDefinition) < workerContent.indexOf(insertAfter);
+
+if (!urlBeforeHandler) {
+  // Move url definition before skew protection check
+  workerContent = workerContent.replace(
+    'const response = maybeGetSkewProtectionResponse(request);',
+    `${urlDefinition}\n            const response = maybeGetSkewProtectionResponse(request);`
+  );
+
+  // Remove duplicate url definition if it exists later
+  const laterUrlIndex = workerContent.indexOf(urlDefinition, workerContent.indexOf(insertAfter));
+  if (laterUrlIndex !== -1) {
+    workerContent = workerContent.replace(new RegExp(`\\s*${urlDefinition.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'), function(match, offset) {
+      return offset === workerContent.indexOf(urlDefinition) ? match : '';
+    });
+  }
+}
 
 if (!workerContent.includes(insertAfter)) {
   console.error('❌ Could not find insertion point in _worker.js');
