@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
+    "build:cloudflare": "next build && open-next",
     "start": "next start",
     "lint": "biome lint .",
     "format": "biome format --write .",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
+    "@opennextjs/cloudflare": "^1.14.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
