@@ -1,10 +1,8 @@
 name: Deploy to Cloudflare Pages
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+  # Disable automatic deployment - use Cloudflare Git integration instead
+  # GitHub Actions deployment has issues with _worker.js upload
   workflow_dispatch:
 
 jobs:
