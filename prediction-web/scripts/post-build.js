@@ -106,15 +106,36 @@ function createWorkerFile() {
 }
 
 /**
+ * Copy wrangler.toml to .open-next
+ */
+function copyWranglerConfig() {
+  console.log('\n3️⃣  Copying wrangler.toml...');
+
+  const wranglerSrc = path.join(process.cwd(), 'wrangler.toml');
+  const wranglerDest = path.join(OPEN_NEXT_DIR, 'wrangler.toml');
+
+  if (!fs.existsSync(wranglerSrc)) {
+    console.error('❌ wrangler.toml not found!');
+    process.exit(1);
+  }
+
+  fs.copyFileSync(wranglerSrc, wranglerDest);
+  console.log(`   Copied: wrangler.toml`);
+
+  console.log('✅ Wrangler config copied successfully');
+}
+
+/**
  * Verify deployment structure
  */
 function verifyStructure() {
-  console.log('\n3️⃣  Verifying deployment structure...');
+  console.log('\n4️⃣  Verifying deployment structure...');
 
   const requiredFiles = [
     '_worker.js',
     '_next',
-    'BUILD_ID'
+    'BUILD_ID',
+    'wrangler.toml'
   ];
 
   let allPresent = true;
@@ -144,6 +165,7 @@ function main() {
   try {
     moveAssetsToRoot();
     createWorkerFile();
+    copyWranglerConfig();
     verifyStructure();
 
     console.log('\n🎉 Post-build processing complete!');
