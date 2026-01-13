@@ -21,24 +21,37 @@ export async function GET(
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(
-      `${getApiBaseUrl()}/option-markets/${marketId}/positions`,
-      {
-        method: "GET",
-        headers,
-      }
-    );
+    // Try the correct backend path: /option-markets/market/:marketId/positions
+    const backendUrl = `${getApiBaseUrl()}/option-markets/market/${encodeURIComponent(marketId)}/positions`;
+    
+    const response = await fetch(backendUrl, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+    });
 
     if (!response.ok) {
+      // If 404, market not found or no positions, return empty array
+      if (response.status === 404) {
+        console.log(`[API /option-markets/market/positions] Market ${marketId} not found or no positions, returning empty array`);
+        return NextResponse.json([]);
+      }
+      
       // If 401/403, return empty array (user not authenticated)
       if (response.status === 401 || response.status === 403) {
         return NextResponse.json([]);
       }
 
+      // For other errors (like 500), log and return empty array to prevent frontend crashes
       const errorData = await response.json().catch(() => ({
         error: "Backend request failed",
       }));
-      return NextResponse.json(errorData, { status: response.status });
+      console.error(`[API /option-markets/market/positions] Backend error for market ${marketId}:`, {
+        status: response.status,
+        error: errorData,
+      });
+      // Return empty array instead of error to prevent frontend crashes
+      return NextResponse.json([]);
     }
 
     const data = await response.json();

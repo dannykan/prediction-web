@@ -242,6 +242,7 @@ export function CreateQuestionForm() {
         title: title.trim(),
         description: description.trim() || undefined,
         questionType: questionType === "binary" ? "YES_NO" : questionType === "single" ? "SINGLE_CHOICE" : "MULTIPLE_CHOICE",
+        mechanism: "LMSR_V2", // Always use LMSR_V2 mechanism
         options,
         categoryId: selectedCategoryIds[0] || undefined,
         closeTime: new Date(closeDate).toISOString(),
