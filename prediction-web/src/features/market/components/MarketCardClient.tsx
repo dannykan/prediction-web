@@ -153,7 +153,10 @@ export function MarketCardClient({ market, commentsCount }: MarketCardClientProp
           {/* Statistics Row */}
           <div className="flex flex-wrap gap-3 text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-3">
             <span>
-              <strong>創建者:</strong> {market.creator?.displayName || '官方創建'}
+              <strong>創建者:</strong> {(() => {
+                const isOfficial = market.isOfficial === true || !market.creator;
+                return isOfficial ? '官方' : (market.creator?.displayName || market.creator?.name || '匿名');
+              })()}
             </span>
             <span>
               <strong>留言評論:</strong> {commentsCount} 則
