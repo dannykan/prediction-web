@@ -232,6 +232,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                   return null;
                 }
               }
+              // 驗證整數（如果用戶手動輸入非整數，會在上面的邏輯中自動修正）
               if (!Number.isInteger(amountNum)) {
                 return (
                   <div className="text-sm text-red-600 dark:text-red-400">
