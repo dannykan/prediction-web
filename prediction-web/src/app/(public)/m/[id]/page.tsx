@@ -102,12 +102,20 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
     
     if (normalizedSlugFromUrl !== normalizedMarketSlug) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[MarketPage] Redirecting to canonical URL:', {
+        console.log('[MarketPage] Slug mismatch detected, redirecting to canonical URL:', {
           from: slugFromUrl,
           to: market.slug,
+          normalizedFrom: normalizedSlugFromUrl,
+          normalizedTo: normalizedMarketSlug,
         });
       }
+      // Redirect to canonical URL (Next.js Link/router will handle encoding automatically)
       redirect(`/m/${market.shortcode}-${market.slug}${commentId ? `?comment=${commentId}` : ''}`);
+    } else {
+      // Slugs are the same after normalization, no redirect needed
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[MarketPage] Slugs match after normalization, no redirect needed');
+      }
     }
   }
 
