@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BarChart3, Clock, Users, MessageCircle, Share2, Star } from 'lucide-react';
+import { ArrowLeft, BarChart3, Clock, Users, MessageCircle, Share2, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import Image from 'next/image';
@@ -48,6 +48,7 @@ export function MarketDetailUI({
 }: MarketDetailUIProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isResolutionRulesExpanded, setIsResolutionRulesExpanded] = useState(false);
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -219,9 +220,9 @@ export function MarketDetailUI({
               </div>
 
               {/* Description */}
-              <p className="text-sm md:text-base text-slate-600 leading-relaxed mb-4">
+              <div className="text-sm md:text-base text-slate-600 leading-relaxed mb-4 whitespace-pre-wrap">
                 {market.description}
-              </p>
+              </div>
 
               {/* Creator & Time Info */}
               <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-slate-500 pt-3 md:pt-4 border-t border-slate-200 flex-wrap">
@@ -246,10 +247,22 @@ export function MarketDetailUI({
 
             {/* Settlement Rules */}
             <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 md:p-6 mb-4">
-              <h2 className="text-base md:text-lg font-bold text-slate-900 mb-2 md:mb-3">結算規則</h2>
-              <p className="text-sm md:text-base text-slate-600 leading-relaxed">
-                {market.resolutionRules || '本市場將根據實際結果進行結算。結算時，選擇正確答案的參與者將獲得相應的獎勵。具體結算方式將在市場截止後由系統自動處理。'}
-              </p>
+              <button
+                onClick={() => setIsResolutionRulesExpanded(!isResolutionRulesExpanded)}
+                className="w-full flex items-center justify-between text-left mb-2 md:mb-3"
+              >
+                <h2 className="text-base md:text-lg font-bold text-slate-900">結算規則</h2>
+                {isResolutionRulesExpanded ? (
+                  <ChevronUp className="w-5 h-5 text-slate-600 flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-slate-600 flex-shrink-0" />
+                )}
+              </button>
+              {isResolutionRulesExpanded && (
+                <div className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
+                  {market.resolutionRules || '本市場將根據實際結果進行結算。結算時，選擇正確答案的參與者將獲得相應的獎勵。具體結算方式將在市場截止後由系統自動處理。'}
+                </div>
+              )}
             </div>
 
             {/* Probability Chart */}
