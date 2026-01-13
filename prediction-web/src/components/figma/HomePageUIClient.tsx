@@ -10,6 +10,7 @@ import { getAllUserPositions } from '@/features/user/api/getAllUserPositions';
 import { getUserStatistics } from '@/features/user/api/getUserStatistics';
 import { getQuests } from '@/features/quests/api/getQuests';
 import { getUnreadCount } from '@/features/notification/api/getUnreadCount';
+import { createNotification } from '@/features/notification/api/createNotification';
 import { signInWithGooglePopup } from '@/core/auth/googleSignIn';
 import { useReferralCodeFromUrl } from '@/features/referrals/hooks/useReferralCodeFromUrl';
 import { applyReferralCode } from '@/features/referrals/api/applyReferralCode';
@@ -80,6 +81,23 @@ export function HomePageUIClient({
       if (result.success) {
         console.log('[HomePageUIClient] Referral code applied successfully:', pendingCode);
         clearPendingReferralCode();
+        
+        // Create notification for welcome gift pack
+        try {
+          await createNotification({
+            userId,
+            type: 'gift',
+            icon: '🎁',
+            title: '新手禮包',
+            message: '歡迎加入神預測！您已成功領取新手禮包，快去查看您的獎勵吧！',
+            color: '#FF6B35',
+            relatedId: null,
+          });
+          console.log('[HomePageUIClient] Welcome gift pack notification created');
+        } catch (notifError) {
+          console.error('[HomePageUIClient] Failed to create welcome gift notification:', notifError);
+          // Don't fail the referral code application if notification creation fails
+        }
       } else {
         console.warn('[HomePageUIClient] Failed to apply referral code:', result.message);
         // Don't clear on error, user might want to try again

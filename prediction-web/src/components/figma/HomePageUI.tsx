@@ -215,6 +215,8 @@ export function HomePageUI({
           totalAssets: user.totalAssets,
           avatar: user.avatar,
         } : undefined}
+        unclaimedQuestsCount={unclaimedQuestsCount}
+        unreadNotificationsCount={unreadNotificationsCount}
       />
 
       <div className="flex w-full">

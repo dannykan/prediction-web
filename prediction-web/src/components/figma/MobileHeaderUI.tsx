@@ -13,17 +13,32 @@ interface MobileHeaderUIProps {
     totalAssets: number;
     avatar: string;
   };
+  unclaimedQuestsCount?: number;
+  unreadNotificationsCount?: number;
 }
 
-export function MobileHeaderUI({ onMenuClick, isLoggedIn, user }: MobileHeaderUIProps) {
+export function MobileHeaderUI({ 
+  onMenuClick, 
+  isLoggedIn, 
+  user,
+  unclaimedQuestsCount = 0,
+  unreadNotificationsCount = 0,
+}: MobileHeaderUIProps) {
+  // Calculate total unread items (quests + notifications)
+  const hasUnreadItems = (unclaimedQuestsCount > 0) || (unreadNotificationsCount > 0);
+
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-20 lg:hidden">
       <div className="flex items-center justify-between h-full px-4">
         <button 
           onClick={onMenuClick}
-          className="p-2 text-slate-600 hover:text-slate-800"
+          className="relative p-2 text-slate-600 hover:text-slate-800"
         >
           <Menu className="w-6 h-6" />
+          {/* Red dot indicator for unread items */}
+          {hasUnreadItems && (
+            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+          )}
         </button>
         
         <Link href="/home" className="flex items-center gap-2">
