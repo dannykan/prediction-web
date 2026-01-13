@@ -14,8 +14,14 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 同步外部 value 變化到內部狀態
+  // 只在值真正改變且不在輸入過程中時才更新
   useEffect(() => {
     if (value !== inputValue && !isComposingRef.current) {
+      // 清除可能存在的防抖 timeout，避免衝突
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       setInputValue(value);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
