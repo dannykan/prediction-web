@@ -142,7 +142,12 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                   max={balance}
                   step="1"
                   value={currentAmount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value) && value >= 0) {
+                      setAmount(value.toString());
+                    }
+                  }}
                   className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                   style={{
                     background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${percentage}%, #e5e7eb ${percentage}%, #e5e7eb 100%)`
@@ -164,7 +169,8 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
               size="sm"
               onClick={() => {
                 const balance = Math.floor(currentUser.coinBalance || 0);
-                const newAmount = Math.min((parseFloat(amount) || 0) + 50, balance);
+                const currentAmount = Math.floor(parseFloat(amount) || 0);
+                const newAmount = Math.min(currentAmount + 50, balance);
                 setAmount(newAmount.toString());
               }}
               disabled={(parseFloat(amount) || 0) >= Math.floor(currentUser.coinBalance || 0)}
@@ -177,7 +183,8 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
               size="sm"
               onClick={() => {
                 const balance = Math.floor(currentUser.coinBalance || 0);
-                const newAmount = Math.min((parseFloat(amount) || 0) + 100, balance);
+                const currentAmount = Math.floor(parseFloat(amount) || 0);
+                const newAmount = Math.min(currentAmount + 100, balance);
                 setAmount(newAmount.toString());
               }}
               disabled={(parseFloat(amount) || 0) >= Math.floor(currentUser.coinBalance || 0)}
@@ -190,7 +197,8 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
               size="sm"
               onClick={() => {
                 const balance = Math.floor(currentUser.coinBalance || 0);
-                const newAmount = Math.min((parseFloat(amount) || 0) + 1000, balance);
+                const currentAmount = Math.floor(parseFloat(amount) || 0);
+                const newAmount = Math.min(currentAmount + 1000, balance);
                 setAmount(newAmount.toString());
               }}
               disabled={(parseFloat(amount) || 0) >= Math.floor(currentUser.coinBalance || 0)}
@@ -216,6 +224,14 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
             (() => {
               const amountNum = parseFloat(amount);
               const balance = currentUser.coinBalance || 0;
+              // 如果不是整數，自動修正為整數
+              if (!Number.isInteger(amountNum)) {
+                const rounded = Math.floor(amountNum);
+                if (rounded > 0) {
+                  setAmount(rounded.toString());
+                  return null;
+                }
+              }
               if (!Number.isInteger(amountNum)) {
                 return (
                   <div className="text-sm text-red-600 dark:text-red-400">
