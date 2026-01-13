@@ -23,27 +23,15 @@ export async function GET(
       marketId,
     });
 
-    // Try admin endpoint first
-    let response = await fetch(`${apiBaseUrl}/admin/markets/${marketId}`, {
+    // Backend doesn't have GET /admin/markets/:marketId endpoint
+    // Use regular /markets/:marketId endpoint instead
+    const response = await fetch(`${apiBaseUrl}/markets/${marketId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-Admin-Authenticated": "true",
       },
       cache: "no-store",
     });
-
-    // If admin endpoint doesn't exist (404), fallback to regular endpoint
-    if (response.status === 404) {
-      console.log("[API /api/admin/markets/[marketId] GET] Admin endpoint not found, using regular endpoint");
-      response = await fetch(`${apiBaseUrl}/markets/${marketId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      });
-    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({
@@ -53,7 +41,7 @@ export async function GET(
         status: response.status,
         statusText: response.statusText,
         error: errorData,
-        url: `${apiBaseUrl}/admin/markets/${marketId}`,
+        url: `${apiBaseUrl}/markets/${marketId}`,
       });
       return NextResponse.json(errorData, { status: response.status });
     }
