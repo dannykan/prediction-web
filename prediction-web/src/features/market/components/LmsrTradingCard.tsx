@@ -1317,7 +1317,37 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
           {/* ✅ 是非題：只有一個選項框，包含機率和兩個按鈕（Circle 和 XIcon） */}
           {isBinary && optionMarkets.length > 0 && (() => {
             const yesOptionMarket = optionMarkets[0]; // 第一個（也是唯一一個）OptionMarket
-            const yesPrice = parseFloat(yesOptionMarket.priceYes) * 100;
+            const priceYesRaw = yesOptionMarket.priceYes;
+            
+            // 驗證 priceYes 是否有效
+            if (!priceYesRaw || priceYesRaw === 'undefined' || priceYesRaw === 'null') {
+              console.error('[LmsrTradingCard] Invalid priceYes for YES_NO market:', {
+                marketId,
+                optionMarketId: yesOptionMarket.id,
+                priceYes: priceYesRaw,
+                optionMarket: yesOptionMarket,
+              });
+            }
+            
+            const yesPrice = parseFloat(priceYesRaw || '0.5') * 100;
+            
+            // 驗證解析後的價格是否有效
+            if (isNaN(yesPrice) || yesPrice < 0 || yesPrice > 100) {
+              console.error('[LmsrTradingCard] Invalid parsed yesPrice for YES_NO market:', {
+                marketId,
+                optionMarketId: yesOptionMarket.id,
+                priceYesRaw,
+                parsedYesPrice: yesPrice,
+              });
+            }
+            
+            console.log('[LmsrTradingCard] YES_NO market probability:', {
+              marketId,
+              optionMarketId: yesOptionMarket.id,
+              optionName: yesOptionMarket.optionName,
+              priceYesRaw,
+              yesPrice: yesPrice.toFixed(1) + '%',
+            });
             const isSelected = selectedOptionMarket === yesOptionMarket.id;
             const hasYesConflict = hasConflictingPosition(yesOptionMarket.id, 'BUY_YES');
             const hasNoConflict = hasConflictingPosition(yesOptionMarket.id, 'BUY_NO');
