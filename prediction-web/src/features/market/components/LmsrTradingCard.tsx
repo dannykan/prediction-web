@@ -1096,8 +1096,12 @@ export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-semibold text-base">{position.optionName}</div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {position.side === 'YES' ? '✅ 支持' : '❌ 反對'}
+                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            {position.side === 'YES' ? (
+                              <Circle className="w-3.5 h-3.5 text-green-600 stroke-[2.5]" />
+                            ) : (
+                              <XIcon className="w-3.5 h-3.5 text-red-600 stroke-[2.5]" />
+                            )}
                             {position.isBundle && ' • Bundle'}
                           </div>
                         </div>
@@ -1177,8 +1181,12 @@ export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-semibold text-base">{position.optionName}</div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {position.side === 'YES' ? '✅ 支持' : '❌ 反對'}
+                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            {position.side === 'YES' ? (
+                              <Circle className="w-3.5 h-3.5 text-green-600 stroke-[2.5]" />
+                            ) : (
+                              <XIcon className="w-3.5 h-3.5 text-red-600 stroke-[2.5]" />
+                            )}
                           </div>
                         </div>
                         <div className={`text-right ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
