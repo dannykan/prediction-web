@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { HomePageUI } from './HomePageUI';
 import type { Market } from '@/features/market/types/market';
@@ -38,6 +38,7 @@ export function HomePageUIClient({
 }: HomePageUIClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
   const [markets, setMarkets] = useState(initialMarkets);
   const [categories, setCategories] = useState(initialCategories);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
@@ -243,44 +244,56 @@ export function HomePageUIClient({
 
   // 處理分類變更（同步到 URL）
   const handleCategoryChange = (category: string) => {
+    // 立即更新本地狀態，讓 UI 立即響應
     setSelectedCategory(category);
-    const params = new URLSearchParams(searchParams.toString());
-    if (category === '全部') {
-      params.delete('categoryId');
-    } else {
-      // 找到對應的分類 ID
-      const categoryObj = categories.find(cat => cat.name === category);
-      if (categoryObj) {
-        params.set('categoryId', categoryObj.id);
+    
+    // 使用 startTransition 標記為非緊急更新，讓 URL 更新不會阻塞 UI
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (category === '全部') {
+        params.delete('categoryId');
       } else {
-        // Fallback: 如果找不到，使用名稱（向後兼容）
-        params.set('categoryId', category);
+        // 找到對應的分類 ID
+        const categoryObj = categories.find(cat => cat.name === category);
+        if (categoryObj) {
+          params.set('categoryId', categoryObj.id);
+        } else {
+          // Fallback: 如果找不到，使用名稱（向後兼容）
+          params.set('categoryId', category);
+        }
       }
-    }
-    router.push(`/home?${params.toString()}`);
+      // 使用 replace 而不是 push，因為這是同一個頁面，只是參數變化
+      router.replace(`/home?${params.toString()}`, { scroll: false });
+    });
   };
 
   // 處理篩選變更（同步到 URL）
   const handleFilterChange = (filter: string) => {
+    // 立即更新本地狀態，讓 UI 立即響應
     setSelectedFilter(filter);
-    const params = new URLSearchParams(searchParams.toString());
     
-    // 映射 Figma 的篩選名稱到主項目的篩選值
-    const filterMap: Record<string, string> = {
-      '熱門': 'all',
-      '最新': 'latest',
-      '倒數中': 'closingSoon',
-      '已關注': 'followed',
-      '已下注': 'myBets',
-    };
-    
-    const mappedFilter = filterMap[filter] || 'all';
-    if (mappedFilter === 'all') {
-      params.delete('filter');
-    } else {
-      params.set('filter', mappedFilter);
-    }
-    router.push(`/home?${params.toString()}`);
+    // 使用 startTransition 標記為非緊急更新，讓 URL 更新不會阻塞 UI
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      
+      // 映射 Figma 的篩選名稱到主項目的篩選值
+      const filterMap: Record<string, string> = {
+        '熱門': 'all',
+        '最新': 'latest',
+        '倒數中': 'closingSoon',
+        '已關注': 'followed',
+        '已下注': 'myBets',
+      };
+      
+      const mappedFilter = filterMap[filter] || 'all';
+      if (mappedFilter === 'all') {
+        params.delete('filter');
+      } else {
+        params.set('filter', mappedFilter);
+      }
+      // 使用 replace 而不是 push，因為這是同一個頁面，只是參數變化
+      router.replace(`/home?${params.toString()}`, { scroll: false });
+    });
   };
 
   // 標記初始加載完成
