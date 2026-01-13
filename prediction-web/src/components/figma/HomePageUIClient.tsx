@@ -62,6 +62,8 @@ export function HomePageUIClient({
   const [quests, setQuests] = useState<any>(null);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const pendingRequestRef = useRef<Promise<void> | null>(null);
 
   // Handle referral code from URL
   const { getPendingReferralCode, clearPendingReferralCode } = useReferralCodeFromUrl();
@@ -249,6 +251,14 @@ export function HomePageUIClient({
     // 立即更新本地狀態，讓 UI 立即響應
     setSelectedCategory(category);
     
+    // 取消正在進行的請求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // 創建新的 AbortController
+    abortControllerRef.current = new AbortController();
+    
     // 使用 startTransition 標記為非緊急更新，讓 URL 更新不會阻塞 UI
     startTransition(() => {
       const params = new URLSearchParams(searchParams.toString());
@@ -273,6 +283,14 @@ export function HomePageUIClient({
   const handleFilterChange = (filter: string) => {
     // 立即更新本地狀態，讓 UI 立即響應
     setSelectedFilter(filter);
+    
+    // 取消正在進行的請求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // 創建新的 AbortController
+    abortControllerRef.current = new AbortController();
     
     // 使用 startTransition 標記為非緊急更新，讓 URL 更新不會阻塞 UI
     startTransition(() => {
@@ -308,6 +326,15 @@ export function HomePageUIClient({
     // 跳過初始加載，因為已經有 initialMarkets
     if (isInitialLoad) return;
     
+    // 取消之前的請求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // 創建新的 AbortController
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    
     async function fetchMarkets() {
       const search = searchParams.get('search') || '';
       const categoryId = searchParams.get('categoryId') || '';
@@ -323,6 +350,8 @@ export function HomePageUIClient({
           optimisticMarkets = optimisticMarkets.filter(market => 
             market.category?.id === categoryId
           );
+        } else {
+          // 如果沒有分類過濾，顯示所有市場
         }
         
         // 應用搜索過濾
@@ -374,7 +403,13 @@ export function HomePageUIClient({
             method: 'GET',
             credentials: 'include',
             cache: 'no-store',
+            signal: abortController.signal,
           });
+          
+          // 檢查請求是否被取消
+          if (abortController.signal.aborted) {
+            return;
+          }
           
           if (response.ok) {
             const data = await response.json();
@@ -396,13 +431,20 @@ export function HomePageUIClient({
               method: 'GET',
               credentials: 'include',
               cache: 'no-store',
+              signal: abortController.signal,
             }),
             fetch(`/api/markets?status=OPEN${search ? `&search=${encodeURIComponent(search)}` : ''}${categoryId ? `&categoryId=${encodeURIComponent(categoryId)}` : ''}`, {
               method: 'GET',
               credentials: 'include',
               cache: 'no-store',
+              signal: abortController.signal,
             }),
           ]);
+          
+          // 檢查請求是否被取消
+          if (abortController.signal.aborted) {
+            return;
+          }
           
           if (positionsResponse.ok && marketsResponse.ok) {
             const positions = await positionsResponse.json();
@@ -433,7 +475,13 @@ export function HomePageUIClient({
             method: 'GET',
             credentials: 'include',
             cache: 'no-store',
+            signal: abortController.signal,
           });
+          
+          // 檢查請求是否被取消
+          if (abortController.signal.aborted) {
+            return;
+          }
           
           if (response.ok) {
             const data = await response.json();
@@ -467,14 +515,31 @@ export function HomePageUIClient({
           }
         }
         
-        setMarkets(fetchedMarkets);
-      } catch (error) {
+        // 再次檢查請求是否被取消（在異步操作完成後）
+        if (!abortController.signal.aborted) {
+          setMarkets(fetchedMarkets);
+        }
+      } catch (error: any) {
+        // 忽略 AbortError（請求被取消是正常的）
+        if (error?.name === 'AbortError') {
+          console.log('[HomePageUIClient] Request aborted (expected when switching filters quickly)');
+          return;
+        }
         console.error('[HomePageUIClient] Failed to fetch markets:', error);
         // Keep existing markets on error
       }
     }
     
-    fetchMarkets();
+    // 保存當前的請求 promise，以便在需要時取消
+    const currentRequest = fetchMarkets();
+    pendingRequestRef.current = currentRequest;
+    
+    // 清理函數：當 effect 重新運行時取消請求
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [searchParams, user?.id, isInitialLoad]);
 
   const handleLogin = async () => {
