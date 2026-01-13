@@ -29,26 +29,35 @@ export async function GET(
       headers: {
         "Content-Type": "application/json",
       },
+      cache: "no-store",
     });
 
+    // 如果市場不存在或沒有持倉數據，返回空數組而不是錯誤
+    if (response.status === 404) {
+      console.log(`[API /exclusive-markets/market/all-positions] Market ${marketId} not found, returning empty array`);
+      return NextResponse.json([]);
+    }
+
     if (!response.ok) {
+      // 對於其他錯誤（如 500），也返回空數組以避免前端崩潰
       const errorData = await response.json().catch(() => ({
         error: "Backend request failed",
       }));
-      return NextResponse.json(errorData, { status: response.status });
+      console.error(`[API /exclusive-markets/market/all-positions] Backend error for market ${marketId}:`, {
+        status: response.status,
+        error: errorData,
+      });
+      // 返回空數組而不是錯誤，讓前端可以正常顯示
+      return NextResponse.json([]);
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    // 確保返回的是數組
+    return NextResponse.json(Array.isArray(data) ? data : []);
   } catch (error) {
     console.error("[API /api/exclusive-markets/market/[marketId]/all-positions] Error:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Internal server error",
-      },
-      { status: 500 },
-    );
+    // 返回空數組而不是錯誤，讓前端可以正常顯示
+    return NextResponse.json([]);
   }
 }
 

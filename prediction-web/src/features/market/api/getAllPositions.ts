@@ -39,15 +39,19 @@ export async function getAllPositions(
     ? `/api/exclusive-markets/market/${encodeURIComponent(marketId)}/all-positions`
     : `/api/option-markets/market/${encodeURIComponent(marketId)}/all-positions`;
 
-  const response = await clientFetch(endpoint);
+  const response = await clientFetch(endpoint, {
+    cache: "no-store",
+  });
 
+  // 如果 API 返回錯誤，返回空數組而不是拋出錯誤
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-    throw new Error(error.message || `Failed to fetch positions: ${response.statusText}`);
+    console.warn(`[getAllPositions] API returned ${response.status} for market ${marketId}, returning empty array`);
+    return [];
   }
 
-  const data = await response.json() as AllPosition[];
-  return data;
+  const data = await response.json();
+  // 確保返回的是數組
+  return Array.isArray(data) ? data : [];
 }
 
 

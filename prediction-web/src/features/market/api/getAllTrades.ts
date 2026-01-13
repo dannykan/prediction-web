@@ -59,8 +59,13 @@ export async function getAllTrades(
     cache: "no-store",
   });
 
+  // 如果 API 返回錯誤，返回空數據而不是拋出錯誤
   if (!response.ok) {
-    throw new Error(`Failed to fetch trades: ${response.statusText}`);
+    console.warn(`[getAllTrades] API returned ${response.status} for market ${marketId}, returning empty data`);
+    if (isSingle) {
+      return { trades: [], initialPrices: [] };
+    }
+    return [];
   }
 
   const data = await response.json();
