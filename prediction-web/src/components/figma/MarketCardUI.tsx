@@ -56,24 +56,31 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
           }
         } else if (questionType === 'SINGLE_CHOICE') {
           // 單選題: 從 exclusive market 獲取前兩高的機率
-          const exclusiveMarket = await getExclusiveMarketByMarketId(market.id);
-          if (exclusiveMarket.outcomes && exclusiveMarket.outcomes.length > 0) {
-            // 過濾掉 NONE 類型的 outcome
-            const validOutcomes = exclusiveMarket.outcomes
-              .filter(o => o.type === 'OPTION' && o.optionName)
-              .map(o => ({
-                optionId: o.optionId || '',
-                optionName: o.optionName || '',
-                probability: parseFloat(o.price || '0'),
-              }))
-              .sort((a, b) => b.probability - a.probability)
-              .slice(0, 2);
-            
-            setTopOptions(validOutcomes.map(o => ({
-              optionId: o.optionId,
-              optionName: o.optionName,
-              yesProbability: o.probability * 100, // price 是 0-1 之間的小數，需要乘以 100
-            })));
+          try {
+            const exclusiveMarket = await getExclusiveMarketByMarketId(market.id);
+            if (exclusiveMarket && exclusiveMarket.outcomes && exclusiveMarket.outcomes.length > 0) {
+              // 過濾掉 NONE 類型的 outcome
+              const validOutcomes = exclusiveMarket.outcomes
+                .filter(o => o.type === 'OPTION' && o.optionName)
+                .map(o => ({
+                  optionId: o.optionId || '',
+                  optionName: o.optionName || '',
+                  probability: parseFloat(o.price || '0'),
+                }))
+                .sort((a, b) => b.probability - a.probability)
+                .slice(0, 2);
+              
+              if (validOutcomes.length > 0) {
+                setTopOptions(validOutcomes.map(o => ({
+                  optionId: o.optionId,
+                  optionName: o.optionName,
+                  yesProbability: o.probability * 100, // price 是 0-1 之間的小數，需要乘以 100
+                })));
+              }
+            }
+          } catch (error) {
+            console.error(`[MarketCardUI] Failed to fetch exclusive market for market ${market.id}:`, error);
+            // 繼續執行，不設置 topOptions，保持默認狀態
           }
         } else if (questionType === 'MULTIPLE_CHOICE') {
           // 多選題: 從 option markets 獲取前兩高的 Yes 機率
