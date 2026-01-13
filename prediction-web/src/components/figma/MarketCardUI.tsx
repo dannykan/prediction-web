@@ -161,14 +161,19 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
     fetchProbabilities();
     
     // 定期刷新機率（每 5 秒），特別是對於 YES_NO 題型
+    let interval: NodeJS.Timeout | null = null;
     if (market.questionType === 'YES_NO' && market.mechanism === 'LMSR_V2') {
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         fetchProbabilities();
       }, 5000);
-      
-      return () => clearInterval(interval);
     }
-  }, [market.id, market.mechanism, market.questionType]);
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [market.id, market.mechanism, market.questionType, market.yesPercentage]);
 
   // 獲取分類名稱
   const categoryName = market.category?.name || '其他';
