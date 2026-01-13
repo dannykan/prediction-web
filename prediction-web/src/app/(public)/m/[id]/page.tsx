@@ -80,10 +80,35 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
     notFound();
   }
 
+  // Debug logging for slug comparison
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[MarketPage] Slug comparison:', {
+      idFromUrl: id,
+      shortcode,
+      slugFromUrl,
+      marketSlug: market.slug,
+      match: slugFromUrl === market.slug,
+    });
+  }
+
   // Check if slug matches canonical slug
   // If not, redirect to canonical URL
+  // Note: We allow slug mismatch to avoid redirect loops, but log it for debugging
   if (slugFromUrl !== null && slugFromUrl !== market.slug) {
-    redirect(`/m/${market.shortcode}-${market.slug}${commentId ? `?comment=${commentId}` : ''}`);
+    // Only redirect if slugs are significantly different (not just encoding differences)
+    // This prevents redirect loops while still canonicalizing URLs
+    const normalizedSlugFromUrl = slugFromUrl.trim().replace(/\s+/g, "-");
+    const normalizedMarketSlug = market.slug.trim().replace(/\s+/g, "-");
+    
+    if (normalizedSlugFromUrl !== normalizedMarketSlug) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[MarketPage] Redirecting to canonical URL:', {
+          from: slugFromUrl,
+          to: market.slug,
+        });
+      }
+      redirect(`/m/${market.shortcode}-${market.slug}${commentId ? `?comment=${commentId}` : ''}`);
+    }
   }
 
   // Get comments count (Server-side)
