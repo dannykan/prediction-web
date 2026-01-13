@@ -56,11 +56,11 @@ export default function AdminCreateMarketPage() {
 	•	備用來源：【填入（選填）】
 若主要來源無法取得，將依序採用備用來源。
 
-② YES 判定邏輯
-只要在 市場有效期間內，任一結算依據 明確顯示 題目所描述之事件成立，即結算為 YES。
+② ◯ 判定邏輯
+只要在 市場有效期間內，任一結算依據 明確顯示 題目所描述之事件成立，即結算為 ◯。
 
-③ NO 判定邏輯
-若截至 結算時間點，無任何結算依據顯示事件成立，或事件被正式否認，則結算為 NO。
+③ ✕ 判定邏輯
+若截至 結算時間點，無任何結算依據顯示事件成立，或事件被正式否認，則結算為 ✕。
 
 ④ 結算時間
 	•	結算時間：${closeTimeText}
@@ -88,8 +88,8 @@ export default function AdminCreateMarketPage() {
 ② 結算邏輯
 在結算時間點，僅能有一個選項被判定為正確：
 	•	以結算依據中 最終、明確結果 為準
-	•	該選項結算為 YES
-	•	其餘所有選項結算為 NO
+	•	該選項結算為 ◯
+	•	其餘所有選項結算為 ✕
 
 ③ 無法判定情況
 若：
@@ -123,12 +123,12 @@ export default function AdminCreateMarketPage() {
 ② 結算邏輯
 在結算時間點：
 	•	每個選項獨立判定
-	•	符合條件者結算為 YES
-	•	不符合條件者結算為 NO
+	•	符合條件者結算為 ◯
+	•	不符合條件者結算為 ✕
 
 ③ 特殊說明
 	•	選項之間互不影響
-	•	可同時出現多個 YES 或全部 NO
+	•	可同時出現多個 ◯ 或全部 ✕
 
 ④ 結算時間
 	•	結算時間：${closeTimeText}
@@ -558,6 +558,61 @@ export default function AdminCreateMarketPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               結算規則 <span className="text-red-500">*</span>
             </label>
+            {/* 快捷符號按鈕（僅在是非題時顯示） */}
+            {formData.questionType === "YES_NO" && (
+              <div className="mb-2 flex items-center gap-2">
+                <span className="text-sm text-gray-600">快捷插入符號：</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const textarea = resolutionRulesTextareaRef.current;
+                    if (textarea) {
+                      const start = textarea.selectionStart;
+                      const end = textarea.selectionEnd;
+                      const text = formData.resolutionRules;
+                      const newText = text.substring(0, start) + "◯" + text.substring(end);
+                      setFormData({ ...formData, resolutionRules: newText });
+                      // 恢復游標位置
+                      setTimeout(() => {
+                        textarea.focus();
+                        textarea.setSelectionRange(start + 1, start + 1);
+                        adjustTextareaHeight(textarea);
+                      }, 0);
+                    }
+                  }}
+                  className="px-3 py-1 text-lg border-2 border-green-500 rounded hover:bg-green-50 transition-colors"
+                  title="插入圈圈符號（〇）"
+                >
+                  ◯
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const textarea = resolutionRulesTextareaRef.current;
+                    if (textarea) {
+                      const start = textarea.selectionStart;
+                      const end = textarea.selectionEnd;
+                      const text = formData.resolutionRules;
+                      const newText = text.substring(0, start) + "✕" + text.substring(end);
+                      setFormData({ ...formData, resolutionRules: newText });
+                      // 恢復游標位置
+                      setTimeout(() => {
+                        textarea.focus();
+                        textarea.setSelectionRange(start + 1, start + 1);
+                        adjustTextareaHeight(textarea);
+                      }, 0);
+                    }
+                  }}
+                  className="px-3 py-1 text-lg border-2 border-red-500 rounded hover:bg-red-50 transition-colors"
+                  title="插入叉叉符號（✕）"
+                >
+                  ✕
+                </button>
+                <span className="text-xs text-gray-500 ml-2">
+                  （點擊按鈕在游標位置插入符號，或直接複製貼上：◯ ✕）
+                </span>
+              </div>
+            )}
             <textarea
               ref={resolutionRulesTextareaRef}
               required
