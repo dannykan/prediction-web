@@ -38,7 +38,14 @@ export function middleware(request: NextRequest) {
   }
 
   // Token exists, allow access
-  return NextResponse.next();
+  const response = NextResponse.next();
+  
+  // 添加 headers 以支援 Threads、LINE 等內嵌瀏覽器
+  // 允許在 iframe 中正常運作
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  response.headers.set("Content-Security-Policy", "frame-ancestors 'self' https://*.threads.net https://*.instagram.com https://*.line.me https://*.line-apps.com");
+  
+  return response;
 }
 
 export const config = {
