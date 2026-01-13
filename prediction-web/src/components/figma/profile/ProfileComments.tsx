@@ -49,6 +49,9 @@ export function ProfileComments({ comments }: ProfileCommentsProps) {
         {comments.map((comment) => {
           const shortcode = comment.market.shortcode;
           const userBet = (comment as any).userBet;
+          // Generate slug from title if not available (preserves Chinese characters)
+          const slug = (comment.market as any).slug || comment.market.title.trim().replace(/\s+/g, "-");
+          const marketUrl = shortcode ? `/m/${shortcode}-${slug}?comment=${comment.id}` : null;
           
           return (
             <div
@@ -57,9 +60,9 @@ export function ProfileComments({ comments }: ProfileCommentsProps) {
             >
               {/* Market Title */}
               <h4 className="text-sm font-medium text-slate-900 mb-2 line-clamp-1">
-                {shortcode ? (
+                {marketUrl ? (
                   <Link 
-                    href={`/m/${shortcode}?comment=${comment.id}`}
+                    href={marketUrl}
                     className="hover:text-indigo-600 transition-colors"
                   >
                     {comment.market.title}
@@ -101,11 +104,11 @@ export function ProfileComments({ comments }: ProfileCommentsProps) {
                 </div>
                 <span>•</span>
                 <span>{formatTimeAgo(comment.createdAt)}</span>
-                {shortcode && (
+                {marketUrl && (
                   <>
                     <span>•</span>
                     <Link 
-                      href={`/m/${shortcode}?comment=${comment.id}`}
+                      href={marketUrl}
                       className="text-indigo-600 hover:underline"
                     >
                       前往市場

@@ -6,12 +6,12 @@ import type { Market } from "../types/market";
 
 /**
  * Generate slug from title
+ * Preserves Chinese characters and other Unicode characters
+ * Only normalizes whitespace and removes leading/trailing spaces
  */
 function generateSlug(title: string): string {
   return title
-    .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, "") // Remove special characters
     .replace(/\s+/g, "-") // Replace spaces with hyphens
     .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
     .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens

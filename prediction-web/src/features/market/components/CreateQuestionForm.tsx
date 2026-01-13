@@ -257,8 +257,8 @@ export function CreateQuestionForm() {
 
       // Success! Redirect to market detail page or home
       if (result.market.shortcode) {
-        // Generate a simple slug from title if not provided
-        const slug = result.market.slug || result.market.title.toLowerCase().replace(/\s+/g, "-").slice(0, 50);
+        // Use the slug from the backend (preserves Chinese characters)
+        const slug = result.market.slug || result.market.title.trim().replace(/\s+/g, "-");
         router.push(`/m/${result.market.shortcode}-${slug}`);
       } else {
         // Fallback to home if no shortcode

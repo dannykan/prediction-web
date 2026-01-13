@@ -147,10 +147,14 @@ export function UserCommentsList({ userId }: UserCommentsListProps) {
           );
         }
         
+        // Generate slug from title if not available (preserves Chinese characters)
+        const slug = (comment.market as any).slug || comment.market.title.trim().replace(/\s+/g, "-");
+        const marketUrl = `/m/${shortcode}-${slug}?comment=${comment.id}`;
+        
         return (
         <Link
           key={comment.id}
-          href={`/m/${shortcode}?comment=${comment.id}`}
+          href={marketUrl}
           className="block"
         >
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
