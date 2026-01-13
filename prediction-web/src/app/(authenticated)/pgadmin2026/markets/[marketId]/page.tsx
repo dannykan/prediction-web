@@ -511,13 +511,37 @@ export default function AdminMarketDetailPage({
                         setSettleWinningOptions([yesOption.id]);
                       }
                     }}
-                    className={`flex-1 px-6 py-4 border-2 rounded-lg text-2xl font-bold transition-all ${
+                    className={`flex-1 px-6 py-8 border-2 rounded-lg transition-all flex flex-col items-center justify-center ${
                       settleWinningOptions.includes(market.options?.find(opt => opt.id === "yes" || opt.name === "是")?.id || "")
-                        ? "border-green-500 bg-green-50 text-green-700"
+                        ? "border-green-500 bg-green-50"
                         : "border-gray-300 hover:border-gray-400"
                     }`}
                   >
-                    ✓ 是
+                    <span className={`text-6xl font-normal mb-2 ${
+                      settleWinningOptions.includes(market.options?.find(opt => opt.id === "yes" || opt.name === "是")?.id || "")
+                        ? "text-green-600"
+                        : "text-gray-400"
+                    }`} style={{
+                      border: settleWinningOptions.includes(market.options?.find(opt => opt.id === "yes" || opt.name === "是")?.id || "")
+                        ? "3px solid #16a34a"
+                        : "3px solid #d1d5db",
+                      borderRadius: "50%",
+                      width: "80px",
+                      height: "80px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      lineHeight: "1"
+                    }}>
+                      ◯
+                    </span>
+                    <span className={`text-lg font-semibold ${
+                      settleWinningOptions.includes(market.options?.find(opt => opt.id === "yes" || opt.name === "是")?.id || "")
+                        ? "text-green-700"
+                        : "text-gray-600"
+                    }`}>
+                      是
+                    </span>
                   </button>
                   <button
                     onClick={() => {
@@ -526,13 +550,26 @@ export default function AdminMarketDetailPage({
                         setSettleWinningOptions([noOption.id]);
                       }
                     }}
-                    className={`flex-1 px-6 py-4 border-2 rounded-lg text-2xl font-bold transition-all ${
+                    className={`flex-1 px-6 py-8 border-2 rounded-lg transition-all flex flex-col items-center justify-center ${
                       settleWinningOptions.includes(market.options?.find(opt => opt.id === "no" || opt.name === "否")?.id || "")
-                        ? "border-red-500 bg-red-50 text-red-700"
+                        ? "border-red-500 bg-red-50"
                         : "border-gray-300 hover:border-gray-400"
                     }`}
                   >
-                    ✗ 否
+                    <span className={`text-6xl font-bold mb-2 ${
+                      settleWinningOptions.includes(market.options?.find(opt => opt.id === "no" || opt.name === "否")?.id || "")
+                        ? "text-red-600"
+                        : "text-gray-400"
+                    }`}>
+                      ✕
+                    </span>
+                    <span className={`text-lg font-semibold ${
+                      settleWinningOptions.includes(market.options?.find(opt => opt.id === "no" || opt.name === "否")?.id || "")
+                        ? "text-red-700"
+                        : "text-gray-600"
+                    }`}>
+                      否
+                    </span>
                   </button>
                 </div>
               </div>
