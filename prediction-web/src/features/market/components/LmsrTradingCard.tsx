@@ -40,9 +40,11 @@ import { MarketDetailClient } from "./MarketDetailClient";
 interface LmsrTradingCardProps {
   marketId: string;
   market?: Market; // 傳入 market 對象以獲取 questionType 和 options
+  onLogin?: () => void | Promise<void>; // 登入回調函數
+  onTradeSuccess?: () => void | Promise<void>; // 交易成功後的回調函數
 }
 
-export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
+export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: LmsrTradingCardProps) {
   const [optionMarkets, setOptionMarkets] = useState<OptionMarketInfo[]>([]);
   const [exclusiveMarket, setExclusiveMarket] = useState<ExclusiveMarketInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,19 @@ export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
       return (
         <div className="mt-3 pt-3 border-t">
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-sm text-yellow-800 dark:text-yellow-200">
-            ⚠️ 請先註冊或登入後才能進行交易
+            <div className="mb-2">⚠️ 請先註冊或登入後才能進行交易</div>
+            {onLogin && (
+              <Button
+                onClick={async () => {
+                  if (onLogin) {
+                    await onLogin();
+                  }
+                }}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                立即登入
+              </Button>
+            )}
           </div>
         </div>
       );
@@ -976,6 +990,11 @@ export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
       await loadPositions();
       // Reset amount after successful trade
       setAmount("");
+      
+      // 調用交易成功回調，觸發頁面刷新
+      if (onTradeSuccess) {
+        await onTradeSuccess();
+      }
     } catch (err: any) {
       alert(err.message || "交易失敗");
     } finally {

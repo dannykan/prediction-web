@@ -281,7 +281,19 @@ export function MarketDetailUI({
 
             {/* Trading Card */}
             <div className="mb-4">
-              <LmsrTradingCard marketId={market.id} market={market} />
+              <LmsrTradingCard 
+                marketId={market.id} 
+                market={market}
+                onLogin={onLogin}
+                onTradeSuccess={async () => {
+                  // 交易成功後刷新頁面
+                  if (onRefresh) {
+                    await onRefresh();
+                  } else {
+                    window.location.reload();
+                  }
+                }}
+              />
             </div>
 
             {/* Comments Section */}
