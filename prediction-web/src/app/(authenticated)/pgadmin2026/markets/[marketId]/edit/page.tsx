@@ -107,8 +107,8 @@ export default function AdminMarketEditPage() {
   const fetchMarket = async () => {
     try {
       setLoading(true);
-      // 添加時間戳參數確保獲取最新數據
-      const response = await fetch(`/api/markets/${marketId}?t=${Date.now()}`, {
+      // 使用管理員 API 獲取市場數據
+      const response = await fetch(`/api/admin/markets/${marketId}?t=${Date.now()}`, {
         credentials: "include",
         cache: "no-store",
       });
@@ -152,9 +152,21 @@ export default function AdminMarketEditPage() {
           adjustTextareaHeight(descriptionTextareaRef.current);
           adjustTextareaHeight(resolutionRulesTextareaRef.current);
         }, 100);
+      } else {
+        // 處理錯誤響應
+        const errorData = await response.json().catch(() => ({
+          error: "無法獲取市場數據",
+        }));
+        console.error("Error fetching market:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+        });
+        alert(`載入市場失敗: ${errorData.error || errorData.message || "未知錯誤"} (狀態碼: ${response.status})`);
       }
     } catch (err) {
       console.error("Error fetching market:", err);
+      alert(`載入市場時發生錯誤: ${err instanceof Error ? err.message : "未知錯誤"}`);
     } finally {
       setLoading(false);
     }
