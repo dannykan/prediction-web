@@ -67,13 +67,15 @@ export async function getMarketByShortcode(
   } catch (error) {
     // Check if it's a 404 error
     if (error instanceof Error && (error as any).status === 404) {
+      console.log(`[getMarketByShortcode] Market with shortcode ${shortcode} not found (404)`);
       return null;
     }
+    // Log other errors (500, etc.) but still return null to show 404 page
     console.error(
       `[getMarketByShortcode] Failed to fetch market with shortcode ${shortcode}:`,
       error,
     );
-    // Return null on error (404 or other errors)
+    // Return null on error (404 or other errors) - this will trigger notFound()
     return null;
   }
 }
