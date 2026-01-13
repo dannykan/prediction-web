@@ -85,7 +85,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                     await onLogin();
                   }
                 }}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium hover:shadow-lg transition-all"
               >
                 立即登入
               </Button>

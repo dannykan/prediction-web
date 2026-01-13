@@ -223,10 +223,7 @@ export function CommentsSection({ marketId, userId, highlightCommentId }: Commen
         {/* Guest View - Only show count */}
         {!userId && !showComments && (
           <div className="mb-6 p-4 md:p-6 bg-slate-50 rounded-lg border border-slate-200 text-center">
-            <p className="text-sm text-slate-600 mb-3">登入後即可參與討論</p>
-            <button className="px-4 py-2 text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:shadow-lg transition-all">
-              登入
-            </button>
+            <p className="text-sm text-slate-600">登入後即可參與討論</p>
           </div>
         )}
 
