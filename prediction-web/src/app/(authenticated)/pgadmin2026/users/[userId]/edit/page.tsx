@@ -96,6 +96,11 @@ export default function AdminUserEditPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!user) {
+      alert("用戶數據未加載，請刷新頁面重試");
+      return;
+    }
+
     // 檢查是否有任何變更
     const hasDisplayNameChange = formData.displayName !== (user.displayName || "");
     const hasRankLevelChange = formData.rankLevel !== (user.rankLevel || 1);
