@@ -7,12 +7,15 @@ import type { Market } from "../types/market";
 /**
  * Generate slug from title
  * Preserves Chinese characters and other Unicode characters
- * Only normalizes whitespace and removes leading/trailing spaces
+ * Removes or replaces characters that are not suitable for URLs
  */
 function generateSlug(title: string): string {
   return title
     .trim()
+    .replace(/\//g, "-") // Replace forward slashes with hyphens (important for URL safety)
+    .replace(/\\/g, "-") // Replace backslashes with hyphens
     .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/[?#&]/g, "-") // Replace URL-unsafe characters with hyphens
     .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
     .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
 }

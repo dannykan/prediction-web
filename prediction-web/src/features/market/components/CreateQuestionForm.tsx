@@ -259,7 +259,27 @@ export function CreateQuestionForm() {
       // Success! Redirect to market detail page or home
       if (result.market.shortcode) {
         // Use the slug from the backend (preserves Chinese characters)
-        const slug = result.market.slug || result.market.title.trim().replace(/\s+/g, "-");
+        // If slug is not provided, generate one from title
+        let slug = result.market.slug;
+        if (!slug) {
+          // Generate slug from title, ensuring URL safety
+          slug = result.market.title
+            .trim()
+            .replace(/\//g, "-") // Replace forward slashes
+            .replace(/\\/g, "-") // Replace backslashes
+            .replace(/\s+/g, "-") // Replace spaces
+            .replace(/[?#&]/g, "-") // Replace URL-unsafe characters
+            .replace(/-+/g, "-") // Replace multiple hyphens
+            .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
+        } else {
+          // Clean existing slug to ensure URL safety
+          slug = slug
+            .replace(/\//g, "-") // Replace forward slashes
+            .replace(/\\/g, "-") // Replace backslashes
+            .replace(/[?#&]/g, "-") // Replace URL-unsafe characters
+            .replace(/-+/g, "-") // Replace multiple hyphens
+            .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
+        }
         router.push(`/m/${result.market.shortcode}-${slug}`);
       } else {
         // Fallback to home if no shortcode
