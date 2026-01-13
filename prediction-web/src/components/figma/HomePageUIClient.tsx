@@ -313,6 +313,54 @@ export function HomePageUIClient({
       const categoryId = searchParams.get('categoryId') || '';
       const filter = searchParams.get('filter') || 'all';
       
+      // 先立即過濾現有數據（樂觀更新），讓 UI 立即響應
+      // 然後在後台獲取完整數據
+      if (markets.length > 0) {
+        let optimisticMarkets = [...markets];
+        
+        // 應用分類過濾
+        if (categoryId) {
+          optimisticMarkets = optimisticMarkets.filter(market => 
+            market.category?.id === categoryId
+          );
+        }
+        
+        // 應用搜索過濾
+        if (search) {
+          const searchLower = search.toLowerCase();
+          optimisticMarkets = optimisticMarkets.filter(market =>
+            market.title.toLowerCase().includes(searchLower) ||
+            market.description?.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        // 應用排序
+        if (filter === 'latest') {
+          optimisticMarkets = optimisticMarkets.sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+          });
+        } else if (filter === 'closingSoon') {
+          optimisticMarkets = optimisticMarkets
+            .filter(market => market.closeTime && new Date(market.closeTime) > new Date())
+            .sort((a, b) => {
+              const dateA = a.closeTime ? new Date(a.closeTime).getTime() : Infinity;
+              const dateB = b.closeTime ? new Date(b.closeTime).getTime() : Infinity;
+              return dateA - dateB;
+            });
+        } else if (filter === 'all') {
+          optimisticMarkets = optimisticMarkets.sort((a, b) => {
+            const volumeA = a.totalVolume || 0;
+            const volumeB = b.totalVolume || 0;
+            return volumeB - volumeA;
+          });
+        }
+        
+        // 立即更新 UI（樂觀更新）
+        setMarkets(optimisticMarkets);
+      }
+      
       try {
         let fetchedMarkets: Market[] = [];
         
