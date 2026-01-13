@@ -18,9 +18,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Check if API base URL is configured
+    let apiBaseUrl: string;
+    try {
+      apiBaseUrl = getApiBaseUrl();
+    } catch (error) {
+      console.error("[API /me] Missing NEXT_PUBLIC_API_BASE_URL:", error);
+      return NextResponse.json(
+        {
+          error: "CONFIGURATION_ERROR",
+          message: "NEXT_PUBLIC_API_BASE_URL is not configured. Please set it in Cloudflare Pages environment variables.",
+        },
+        { status: 500 },
+      );
+    }
+
     // Try to call backend GET /me endpoint
     try {
-      const response = await fetch(`${getApiBaseUrl()}/me`, {
+      const response = await fetch(`${apiBaseUrl}/me`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -52,14 +67,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(errorData, { status: response.status });
     } catch (fetchError) {
       // Network error or other fetch issues
-      // Assume backend /me endpoint doesn't exist
       console.error("[API /me] Backend fetch error:", fetchError);
+      
+      // Check if it's a configuration error
+      if (fetchError instanceof Error && fetchError.message.includes("NEXT_PUBLIC_API_BASE_URL")) {
+        return NextResponse.json(
+          {
+            error: "CONFIGURATION_ERROR",
+            message: "NEXT_PUBLIC_API_BASE_URL is not configured. Please set it in Cloudflare Pages environment variables.",
+          },
+          { status: 500 },
+        );
+      }
+      
+      // Network or other errors
       return NextResponse.json(
         {
-          error: "ME_ENDPOINT_NOT_IMPLEMENTED",
-          message: "Backend /me endpoint is not implemented yet",
+          error: "BACKEND_CONNECTION_ERROR",
+          message: "Failed to connect to backend API. Please check if the backend is running and NEXT_PUBLIC_API_BASE_URL is correct.",
         },
-        { status: 501 },
+        { status: 502 },
       );
     }
   } catch (error) {

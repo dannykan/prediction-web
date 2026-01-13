@@ -6,10 +6,8 @@ import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
 export async function POST(request: NextRequest) {
   try {
+    // Try to get token, but don't require it (admin uploads may not need user token)
     const token = await getAuthTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
@@ -22,12 +20,18 @@ export async function POST(request: NextRequest) {
     const backendFormData = new FormData();
     backendFormData.append("file", file);
 
+    const headers: Record<string, string> = {
+      // Don't set Content-Type, let fetch set it with boundary
+    };
+
+    // Only add Authorization header if token exists
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${getApiBaseUrl()}/uploads/avatar`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        // Don't set Content-Type, let fetch set it with boundary
-      },
+      headers,
       body: backendFormData,
     });
 
