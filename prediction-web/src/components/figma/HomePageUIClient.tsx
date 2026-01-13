@@ -195,6 +195,7 @@ export function HomePageUIClient({
     }
     
     // 使用防抖來延遲 URL 更新，避免每次輸入都觸發 API 請求
+    // 延遲時間與 SearchBar 的防抖時間一致（500ms），適合中文輸入
     searchTimeoutRef.current = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
       if (value.trim()) {
@@ -204,7 +205,7 @@ export function HomePageUIClient({
       }
       // 使用 replace 而不是 push，避免歷史記錄堆積
       router.replace(`/home?${params.toString()}`, { scroll: false });
-    }, 300); // 300ms 防抖延遲
+    }, 500); // 500ms 防抖延遲，適合中文輸入法
   };
   
   // 清理 timeout 當組件卸載時
