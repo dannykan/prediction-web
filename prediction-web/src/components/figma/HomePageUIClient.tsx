@@ -221,14 +221,16 @@ export function HomePageUIClient({
       
       // 只在值真正改變時才更新 URL，避免無限循環
       if (currentSearch !== trimmedValue) {
-        const params = new URLSearchParams(searchParams.toString());
-        if (trimmedValue) {
-          params.set('search', trimmedValue);
-        } else {
-          params.delete('search');
-        }
-        // 使用 replace 而不是 push，避免歷史記錄堆積
-        router.replace(`/home?${params.toString()}`, { scroll: false });
+        startTransition(() => {
+          const params = new URLSearchParams(searchParams.toString());
+          if (trimmedValue) {
+            params.set('search', trimmedValue);
+          } else {
+            params.delete('search');
+          }
+          // 使用 replace 而不是 push，避免歷史記錄堆積
+          router.replace(`/home?${params.toString()}`, { scroll: false });
+        });
       }
     }, 500); // 500ms 防抖延遲，適合中文輸入法
   };
