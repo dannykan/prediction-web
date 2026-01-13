@@ -13,6 +13,7 @@ import {
   getExclusiveMarketByMarketId,
   type ExclusiveMarketInfo,
 } from '@/features/market/api/lmsr';
+import { getAllTrades } from '@/features/market/api/getAllTrades';
 
 interface MarketCardUIProps {
   market: Market;
@@ -45,39 +46,63 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
         const questionType = market.questionType;
         
         if (questionType === 'YES_NO') {
-          // YES_NO: 獲取第一個選項（通常是「是」選項）的 Yes 機率
-          // 對於 LMSR 機制，必須從 option markets 獲取 priceYes
+          // YES_NO: 從交易記錄獲取最新機率（與 ProbabilityChart 一致）
+          // 對於 LMSR 機制，從最後一筆交易的 priceYesAfter 獲取
           if (market.mechanism === 'LMSR_V2') {
             try {
-              const optionMarkets = await getOptionMarketsByMarketId(market.id);
-              console.log(`[MarketCardUI] Fetched option markets for YES_NO market ${market.id}:`, {
-                count: optionMarkets?.length || 0,
-                markets: optionMarkets?.map(om => ({
-                  id: om.id,
-                  optionId: om.optionId,
-                  optionName: om.optionName,
-                  priceYes: om.priceYes,
-                })),
-              });
+              // 先獲取交易記錄
+              const trades = await getAllTrades(market.id, false);
+              const tradesArray = Array.isArray(trades) ? trades : (trades?.trades || []);
               
-              if (optionMarkets && optionMarkets.length > 0) {
-                // 使用第一個 option market 的 priceYes（代表「是」選項的 Yes 機率）
-                const firstOption = optionMarkets[0];
-                const priceYes = parseFloat(firstOption.priceYes || '0.5');
-                if (!isNaN(priceYes) && priceYes >= 0 && priceYes <= 1) {
-                  setYesProbability(priceYes * 100); // priceYes 是 0-1 之間的小數，需要乘以 100
-                  console.log(`[MarketCardUI] Set YES probability for market ${market.id}:`, priceYes * 100);
+              if (tradesArray.length > 0) {
+                // 獲取最後一筆交易
+                const sortedTrades = [...tradesArray].sort((a, b) => 
+                  new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                );
+                const lastTrade = sortedTrades[sortedTrades.length - 1];
+                
+                if (lastTrade.priceYesAfter) {
+                  const probability = parseFloat(lastTrade.priceYesAfter) * 100;
+                  setYesProbability(probability);
+                  console.log(`[MarketCardUI] Set YES probability from last trade for market ${market.id}:`, probability);
+                } else if (lastTrade.priceAfter) {
+                  const probability = parseFloat(lastTrade.priceAfter) * 100;
+                  setYesProbability(probability);
+                  console.log(`[MarketCardUI] Set YES probability from last trade (fallback) for market ${market.id}:`, probability);
                 } else {
-                  console.warn(`[MarketCardUI] Invalid priceYes for market ${market.id}:`, priceYes);
-                  // 如果 priceYes 無效，保持 null 狀態，不設置默認值
+                  // 如果交易記錄沒有 priceYesAfter，使用 option markets 的 priceYes
+                  const optionMarkets = await getOptionMarketsByMarketId(market.id);
+                  if (optionMarkets && optionMarkets.length > 0) {
+                    const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
+                    setYesProbability(priceYes);
+                    console.log(`[MarketCardUI] Set YES probability from option market for market ${market.id}:`, priceYes);
+                  } else {
+                    console.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
+                  }
                 }
               } else {
-                console.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
-                // 保持 yesProbability 為 null，讓 UI 顯示「載入機率中...」
+                // 如果沒有交易記錄，使用 option markets 的 priceYes
+                const optionMarkets = await getOptionMarketsByMarketId(market.id);
+                if (optionMarkets && optionMarkets.length > 0) {
+                  const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
+                  setYesProbability(priceYes);
+                  console.log(`[MarketCardUI] No trades found, using option market priceYes for market ${market.id}:`, priceYes);
+                } else {
+                  console.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
+                }
               }
             } catch (error) {
-              console.error(`[MarketCardUI] Error fetching option markets for YES_NO market ${market.id}:`, error);
-              // 對於 LMSR 機制，不設置默認值，保持 null
+              console.error(`[MarketCardUI] Error fetching trades for YES_NO market ${market.id}:`, error);
+              // 嘗試使用 option markets 作為後備
+              try {
+                const optionMarkets = await getOptionMarketsByMarketId(market.id);
+                if (optionMarkets && optionMarkets.length > 0) {
+                  const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
+                  setYesProbability(priceYes);
+                }
+              } catch (fallbackError) {
+                console.error(`[MarketCardUI] Error fetching option markets as fallback:`, fallbackError);
+              }
             }
           } else {
             // 非 LMSR 機制，可以使用 normalizeMarket 計算的機率
@@ -159,20 +184,6 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
     };
 
     fetchProbabilities();
-    
-    // 定期刷新機率（每 5 秒），特別是對於 YES_NO 題型
-    let interval: NodeJS.Timeout | null = null;
-    if (market.questionType === 'YES_NO' && market.mechanism === 'LMSR_V2') {
-      interval = setInterval(() => {
-        fetchProbabilities();
-      }, 5000);
-    }
-    
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
   }, [market.id, market.mechanism, market.questionType, market.yesPercentage]);
 
   // 獲取分類名稱

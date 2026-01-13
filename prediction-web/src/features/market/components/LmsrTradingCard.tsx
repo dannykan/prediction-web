@@ -30,6 +30,7 @@ import {
   type Position,
   type ExclusivePosition,
 } from "../api/lmsr";
+import { getAllTrades } from "../api/getAllTrades";
 import { formatPercentage, formatCurrency } from "@/shared/utils/format";
 import type { Market } from "../types/market";
 import { getMe } from "@/features/user/api/getMe";
@@ -48,6 +49,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
   const [optionMarkets, setOptionMarkets] = useState<OptionMarketInfo[]>([]);
   const [exclusiveMarket, setExclusiveMarket] = useState<ExclusiveMarketInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentYesProbability, setCurrentYesProbability] = useState<number | null>(null); // 當前 YES 機率（從最後一筆交易獲取）
   const [error, setError] = useState<string | null>(null);
   const [selectedOptionMarket, setSelectedOptionMarket] = useState<string | null>(null);
   const [selectedOutcomeId, setSelectedOutcomeId] = useState<string | null>(null); // For exclusive markets
@@ -593,17 +595,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
     loadMarkets();
     loadPositions();
     loadUser();
-    
-    // 定期刷新 optionMarkets 以獲取最新機率（每 5 秒）
-    const interval = setInterval(() => {
-      if (!isSingle) {
-        // 只刷新 option markets（是非題和多選題）
-        loadMarkets();
-      }
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [marketId, isSingle]);
+  }, [marketId]);
 
   const loadUser = async () => {
     try {
@@ -704,6 +696,45 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
             // Auto-select first option market for binary questions if none selected
             if (isBinary && !selectedOptionMarket && data.length > 0) {
               setSelectedOptionMarket(data[0].id);
+            }
+            
+            // 對於是非題，從交易記錄獲取最新機率
+            if (isBinary) {
+              try {
+                const trades = await getAllTrades(marketId, false);
+                const tradesArray = Array.isArray(trades) ? trades : (trades?.trades || []);
+                if (tradesArray.length > 0) {
+                  // 獲取最後一筆交易
+                  const sortedTrades = [...tradesArray].sort((a, b) => 
+                    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                  );
+                  const lastTrade = sortedTrades[sortedTrades.length - 1];
+                  if (lastTrade.priceYesAfter) {
+                    const probability = parseFloat(lastTrade.priceYesAfter) * 100;
+                    setCurrentYesProbability(probability);
+                    console.log('[LmsrTradingCard] Set current YES probability from last trade:', probability);
+                  } else if (lastTrade.priceAfter) {
+                    const probability = parseFloat(lastTrade.priceAfter) * 100;
+                    setCurrentYesProbability(probability);
+                    console.log('[LmsrTradingCard] Set current YES probability from last trade (fallback):', probability);
+                  } else {
+                    // 如果沒有交易記錄，使用 option market 的 priceYes
+                    const priceYes = parseFloat(data[0].priceYes || '0.5') * 100;
+                    setCurrentYesProbability(priceYes);
+                    console.log('[LmsrTradingCard] Set current YES probability from option market:', priceYes);
+                  }
+                } else {
+                  // 如果沒有交易記錄，使用 option market 的 priceYes
+                  const priceYes = parseFloat(data[0].priceYes || '0.5') * 100;
+                  setCurrentYesProbability(priceYes);
+                  console.log('[LmsrTradingCard] No trades found, using option market priceYes:', priceYes);
+                }
+              } catch (err) {
+                console.error('[LmsrTradingCard] Failed to load trades for probability:', err);
+                // 使用 option market 的 priceYes 作為後備
+                const priceYes = parseFloat(data[0].priceYes || '0.5') * 100;
+                setCurrentYesProbability(priceYes);
+              }
             }
           }
         } catch (err: any) {
@@ -1005,7 +1036,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
         setQuote(result);
       }
       
-      // Reload markets to get updated prices
+      // Reload markets to get updated prices (this will also update currentYesProbability)
       await loadMarkets();
       // Reload positions to show updated holdings
       await loadPositions();
@@ -1338,36 +1369,19 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
           {/* ✅ 是非題：只有一個選項框，包含機率和兩個按鈕（Circle 和 XIcon） */}
           {isBinary && optionMarkets.length > 0 && (() => {
             const yesOptionMarket = optionMarkets[0]; // 第一個（也是唯一一個）OptionMarket
-            const priceYesRaw = yesOptionMarket.priceYes;
             
-            // 驗證 priceYes 是否有效
-            if (!priceYesRaw || priceYesRaw === 'undefined' || priceYesRaw === 'null') {
-              console.error('[LmsrTradingCard] Invalid priceYes for YES_NO market:', {
-                marketId,
-                optionMarketId: yesOptionMarket.id,
-                priceYes: priceYesRaw,
-                optionMarket: yesOptionMarket,
-              });
-            }
-            
-            const yesPrice = parseFloat(priceYesRaw || '0.5') * 100;
-            
-            // 驗證解析後的價格是否有效
-            if (isNaN(yesPrice) || yesPrice < 0 || yesPrice > 100) {
-              console.error('[LmsrTradingCard] Invalid parsed yesPrice for YES_NO market:', {
-                marketId,
-                optionMarketId: yesOptionMarket.id,
-                priceYesRaw,
-                parsedYesPrice: yesPrice,
-              });
-            }
+            // 使用從交易記錄獲取的最新機率，如果沒有則使用 option market 的 priceYes
+            const yesPrice = currentYesProbability !== null 
+              ? currentYesProbability 
+              : (parseFloat(yesOptionMarket.priceYes || '0.5') * 100);
             
             console.log('[LmsrTradingCard] YES_NO market probability:', {
               marketId,
               optionMarketId: yesOptionMarket.id,
               optionName: yesOptionMarket.optionName,
-              priceYesRaw,
-              yesPrice: yesPrice.toFixed(1) + '%',
+              currentYesProbability,
+              optionMarketPriceYes: yesOptionMarket.priceYes,
+              finalYesPrice: yesPrice.toFixed(1) + '%',
             });
             const isSelected = selectedOptionMarket === yesOptionMarket.id;
             const hasYesConflict = hasConflictingPosition(yesOptionMarket.id, 'BUY_YES');
