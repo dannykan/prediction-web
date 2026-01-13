@@ -140,44 +140,63 @@ export default function AdminMarketsPage() {
 
   // 創建新分類
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) {
+    const trimmedName = newCategoryName.trim();
+    if (!trimmedName) {
       alert("請輸入分類名稱");
       return;
     }
 
     // 生成 slug（從名稱自動生成）
-    const slug = newCategoryName
-      .trim()
+    // 先轉換為小寫，替換空格為連字符，移除特殊字符
+    let slug = trimmedName
       .toLowerCase()
       .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
+      .replace(/[^a-z0-9-]/g, "")
+      .replace(/-+/g, "-") // 將多個連字符替換為單個
+      .replace(/^-|-$/g, ""); // 移除開頭和結尾的連字符
+
+    // 如果 slug 為空（例如名稱全是特殊字符），使用默認值
+    if (!slug) {
+      slug = `category-${Date.now()}`;
+    }
 
     setIsCreatingCategory(true);
     try {
+      const requestBody = {
+        name: trimmedName,
+        slug: slug,
+        sortOrder: categories.length + 1,
+      };
+
+      console.log('[handleCreateCategory] Request body:', requestBody);
+
       const response = await fetch("/api/admin/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({
-          name: newCategoryName.trim(),
-          slug: slug,
-          sortOrder: categories.length + 1,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
+        const data = await response.json();
+        console.log('[handleCreateCategory] Category created:', data);
         alert("分類已創建");
         setNewCategoryName("");
         fetchCategories();
       } else {
-        const error = await response.json();
-        alert(`創建失敗: ${error.message || "Unknown error"}`);
+        const error = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
+        console.error('[handleCreateCategory] Error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error,
+        });
+        alert(`創建失敗: ${error.message || error.error || `HTTP ${response.status}`}`);
       }
     } catch (err) {
-      console.error("Error creating category:", err);
-      alert("創建失敗");
+      console.error("[handleCreateCategory] Error creating category:", err);
+      alert(`創建失敗: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setIsCreatingCategory(false);
     }
