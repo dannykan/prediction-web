@@ -106,25 +106,37 @@ export interface ExclusivePosition {
 
 /**
  * Get all option markets for a market
+ * Returns empty array on error instead of throwing (to prevent UI crashes)
  */
 export async function getOptionMarketsByMarketId(marketId: string): Promise<OptionMarketInfo[]> {
-  const response = await fetch(
-    `/api/option-markets/market/${marketId}`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+  try {
+    const response = await fetch(
+      `/api/option-markets/market/${marketId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
       },
-      credentials: 'include',
-    },
-  );
+    );
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-    throw new Error(error.message || `HTTP ${response.status}`);
+    if (!response.ok) {
+      // Log error but return empty array instead of throwing
+      const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+      console.warn(`[getOptionMarketsByMarketId] Failed to fetch option markets for market ${marketId}:`, {
+        status: response.status,
+        error: error.message || `HTTP ${response.status}`,
+      });
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error(`[getOptionMarketsByMarketId] Error fetching option markets for market ${marketId}:`, error);
+    return [];
   }
-
-  return response.json();
 }
 
 /**

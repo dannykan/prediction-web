@@ -615,39 +615,67 @@ export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
       console.log('[LmsrTradingCard] Loading markets:', {
         marketId,
         isSingle,
+        isBinary,
+        isMultiple,
         questionType,
+        mechanism: market?.mechanism,
       });
       
-      // 單選題使用 exclusive markets，其他使用 option markets
+      // 單選題使用 exclusive markets，其他（是非題、多選題）使用 option markets
       if (isSingle) {
         console.log('[LmsrTradingCard] Fetching exclusive market for single choice question');
-        const data = await getExclusiveMarketByMarketId(marketId);
-        console.log('[LmsrTradingCard] Exclusive market loaded:', {
-          exclusiveMarketId: data.exclusiveMarketId,
-          outcomesCount: data.outcomes.length,
-          outcomes: data.outcomes.map(o => ({
-            outcomeId: o.outcomeId,
-            optionName: o.optionName,
-            type: o.type,
-            price: o.price,
-            pricePercent: (parseFloat(o.price) * 100).toFixed(2) + '%',
-            q: o.q,
-          })),
-          priceSum: data.outcomes.reduce((sum, o) => sum + parseFloat(o.price), 0).toFixed(6),
-        });
-        setExclusiveMarket(data);
+        try {
+          const data = await getExclusiveMarketByMarketId(marketId);
+          console.log('[LmsrTradingCard] Exclusive market loaded:', {
+            exclusiveMarketId: data.exclusiveMarketId,
+            outcomesCount: data.outcomes.length,
+            outcomes: data.outcomes.map(o => ({
+              outcomeId: o.outcomeId,
+              optionName: o.optionName,
+              type: o.type,
+              price: o.price,
+              pricePercent: (parseFloat(o.price) * 100).toFixed(2) + '%',
+              q: o.q,
+            })),
+            priceSum: data.outcomes.reduce((sum, o) => sum + parseFloat(o.price), 0).toFixed(6),
+          });
+          setExclusiveMarket(data);
+        } catch (err: any) {
+          console.error('[LmsrTradingCard] Failed to load exclusive market:', err);
+          setExclusiveMarket(null);
+          setError(`無法載入單選題市場數據: ${err.message || '未知錯誤'}`);
+        }
         // Don't auto-select any outcome - let user choose
       } else {
-        console.log('[LmsrTradingCard] Fetching option markets for non-single choice question');
-        const data = await getOptionMarketsByMarketId(marketId);
-        console.log('[LmsrTradingCard] Option markets loaded:', {
-          count: data.length,
-          markets: data.map(om => ({
-            id: om.id,
-            optionName: om.optionName,
-          })),
-        });
-        setOptionMarkets(data);
+        // 是非題和多選題都使用 option markets
+        console.log('[LmsrTradingCard] Fetching option markets for', isBinary ? 'YES_NO' : 'MULTIPLE_CHOICE', 'question');
+        try {
+          const data = await getOptionMarketsByMarketId(marketId);
+          console.log('[LmsrTradingCard] Option markets loaded:', {
+            count: data.length,
+            markets: data.map(om => ({
+              id: om.id,
+              optionId: om.optionId,
+              optionName: om.optionName,
+              priceYes: om.priceYes,
+            })),
+          });
+          
+          if (data.length === 0) {
+            console.warn('[LmsrTradingCard] No option markets found for market:', marketId);
+            setError('此市場尚未初始化 LMSR 選項市場，請聯繫管理員');
+          } else {
+            setOptionMarkets(data);
+            // Auto-select first option market for binary questions if none selected
+            if (isBinary && !selectedOptionMarket && data.length > 0) {
+              setSelectedOptionMarket(data[0].id);
+            }
+          }
+        } catch (err: any) {
+          console.error('[LmsrTradingCard] Failed to load option markets:', err);
+          setOptionMarkets([]);
+          setError(`無法載入選項市場數據: ${err.message || '未知錯誤'}`);
+        }
         // Don't auto-select any option market - let user choose
       }
     } catch (err: any) {
@@ -657,7 +685,9 @@ export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
         error: errorMessage,
         marketId,
         isSingle,
+        isBinary,
         questionType,
+        mechanism: market?.mechanism,
         stack: err.stack,
       });
     } finally {
@@ -965,11 +995,53 @@ export function LmsrTradingCard({ marketId, market }: LmsrTradingCardProps) {
   // 對於單選題，檢查 exclusiveMarket；對於其他題型，檢查 optionMarkets
   if (isSingle) {
     if (!exclusiveMarket || exclusiveMarket.outcomes.length === 0) {
-      return <Card><CardContent className="p-6">此市場沒有 LMSR 選項</CardContent></Card>;
+      return (
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center space-y-2">
+              <p className="text-red-600 font-semibold">此市場沒有 LMSR 選項</p>
+              {error && (
+                <p className="text-sm text-gray-600">{error}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                市場 ID: {marketId}
+                <br />
+                題型: {questionType}
+                <br />
+                機制: {market?.mechanism || '未設置'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      );
     }
   } else {
     if (optionMarkets.length === 0) {
-      return <Card><CardContent className="p-6">此市場沒有 LMSR 選項</CardContent></Card>;
+      return (
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center space-y-2">
+              <p className="text-red-600 font-semibold">此市場沒有 LMSR 選項</p>
+              {error && (
+                <p className="text-sm text-gray-600">{error}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                市場 ID: {marketId}
+                <br />
+                題型: {questionType} {isBinary ? '(是非題)' : '(多選題)'}
+                <br />
+                機制: {market?.mechanism || '未設置'}
+                <br />
+                {!loading && (
+                  <span className="text-orange-600">
+                    ⚠️ 此市場可能尚未初始化 LMSR 選項市場，請聯繫管理員檢查後端配置
+                  </span>
+                )}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      );
     }
   }
 
