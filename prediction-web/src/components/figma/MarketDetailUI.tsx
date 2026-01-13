@@ -90,8 +90,10 @@ export function MarketDetailUI({
   const categoryName = market.category?.name || '其他';
 
   // 獲取創建者資訊
-  const creatorName = market.creator?.displayName || market.creator?.name || '匿名';
-  const creatorAvatar = market.creator?.avatarUrl || 'https://i.pravatar.cc/150?u=anonymous';
+  // 如果是官方市場（isOfficial 為 true 或 creator 為 null），顯示「官方」和 logo
+  const isOfficial = market.isOfficial === true || !market.creator;
+  const creatorName = isOfficial ? '官方' : (market.creator?.displayName || market.creator?.name || '匿名');
+  const creatorAvatar = isOfficial ? '/images/logo.png' : (market.creator?.avatarUrl || 'https://i.pravatar.cc/150?u=anonymous');
 
   // 獲取圖片
   const marketImage = market.imageUrl || 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=800';

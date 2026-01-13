@@ -29,9 +29,10 @@ export function CompactMarketCard({ market, index }: CompactMarketCardProps) {
   const categoryIcon = market.category ? getCategoryIcon(market.category.name) : '📊';
   
   const isHot = market.totalVolume > 50000;
-  const isOfficial = market.isOfficial || false;
-  const creatorName = market.creator?.displayName || market.creator?.name || '創建者';
-  const creatorAvatar = market.creator?.avatarUrl;
+  // 判斷是否為官方市場（isOfficial 為 true 或 creator 為 null）
+  const isOfficial = market.isOfficial === true || !market.creator;
+  const creatorName = isOfficial ? '官方' : (market.creator?.displayName || market.creator?.name || '創建者');
+  const creatorAvatar = isOfficial ? '/images/logo.png' : market.creator?.avatarUrl;
   
   // Resolve image URL (handle relative URLs)
   // Note: In client components, we can't access process.env directly
@@ -125,7 +126,14 @@ export function CompactMarketCard({ market, index }: CompactMarketCardProps) {
                 }}
               >
                 {isOfficial ? (
-                  <span className="text-[10px]">👤</span>
+                  <ImageWithFallback
+                    src="/images/logo.png"
+                    alt="官方"
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                    fallback={<span className="text-[10px]">👤</span>}
+                  />
                 ) : resolvedCreatorAvatar ? (
                   <ImageWithFallback
                     src={resolvedCreatorAvatar}

@@ -24,6 +24,36 @@ export function CreatorInfo({
 }: CreatorInfoProps) {
   const [imageError, setImageError] = useState(false);
   
+  // 判斷是否為官方市場（isOfficial 為 true 或 creator 為 null）
+  const isOfficial = market.isOfficial === true || !market.creator;
+  
+  // 如果是官方市場，顯示「官方」和 logo
+  if (isOfficial) {
+    const avatarSize = size === "sm" ? 24 : size === "lg" ? 48 : 32;
+    const textSize = size === "sm" ? "text-xs" : size === "lg" ? "text-base" : "text-sm";
+    
+    return (
+      <div className={`flex items-center gap-2 ${className}`}>
+        {/* Official Logo */}
+        <div className="relative flex-shrink-0">
+          <Image
+            src="/images/logo.png"
+            alt="官方"
+            width={avatarSize}
+            height={avatarSize}
+            className="rounded-full object-cover border-2 border-gray-300"
+            style={{ width: avatarSize, height: avatarSize }}
+            unoptimized
+          />
+        </div>
+        {/* Name */}
+        <span className={`${textSize} font-medium text-gray-700`} itemProp="author">
+          官方
+        </span>
+      </div>
+    );
+  }
+  
   if (!market.creator) {
     return null;
   }
