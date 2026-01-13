@@ -107,8 +107,8 @@ export default function AdminMarketEditPage() {
   const fetchMarket = async () => {
     try {
       setLoading(true);
-      // 使用管理員 API 獲取市場數據
-      const response = await fetch(`/api/admin/markets/${marketId}?t=${Date.now()}`, {
+      // 使用標準的 markets API 獲取市場數據（更穩定）
+      const response = await fetch(`/api/markets/${marketId}?t=${Date.now()}`, {
         credentials: "include",
         cache: "no-store",
       });

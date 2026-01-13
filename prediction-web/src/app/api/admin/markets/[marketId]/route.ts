@@ -21,11 +21,16 @@ export async function GET(
 
     console.log("[API /api/admin/markets/[marketId] GET] Fetching market:", {
       marketId,
+      apiBaseUrl,
     });
 
     // Backend doesn't have GET /admin/markets/:marketId endpoint
     // Use regular /markets/:marketId endpoint instead
-    const response = await fetch(`${apiBaseUrl}/markets/${marketId}`, {
+    const backendUrl = `${apiBaseUrl}/markets/${encodeURIComponent(marketId)}`;
+    
+    console.log("[API /api/admin/markets/[marketId] GET] Calling backend:", backendUrl);
+    
+    const response = await fetch(backendUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -33,24 +38,42 @@ export async function GET(
       cache: "no-store",
     });
 
+    console.log("[API /api/admin/markets/[marketId] GET] Backend response:", {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+    });
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({
-        error: "Backend request failed",
-      }));
+      let errorData;
+      try {
+        const text = await response.text();
+        console.error("[API /api/admin/markets/[marketId] GET] Backend error response text:", text);
+        try {
+          errorData = JSON.parse(text);
+        } catch {
+          errorData = { error: text || "Backend request failed" };
+        }
+      } catch (e) {
+        errorData = { error: "Backend request failed" };
+      }
+      
       console.error("[API /api/admin/markets/[marketId] GET] Backend error:", {
         status: response.status,
         statusText: response.statusText,
         error: errorData,
-        url: `${apiBaseUrl}/markets/${marketId}`,
+        url: backendUrl,
       });
+      
       return NextResponse.json(errorData, { status: response.status });
     }
 
     const data = await response.json();
-    console.log("[API /api/admin/markets/[marketId] GET] Success");
+    console.log("[API /api/admin/markets/[marketId] GET] Success, data keys:", Object.keys(data));
     return NextResponse.json(data);
   } catch (error) {
     console.error("[API /api/admin/markets/[marketId] GET] Error:", error);
+    console.error("[API /api/admin/markets/[marketId] GET] Error stack:", error instanceof Error ? error.stack : "No stack");
     return NextResponse.json(
       {
         error:
