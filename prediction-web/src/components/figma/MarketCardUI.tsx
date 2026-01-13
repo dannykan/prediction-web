@@ -46,14 +46,62 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
         
         if (questionType === 'YES_NO') {
           // YES_NO: 獲取第一個選項（通常是「是」選項）的 Yes 機率
-          const optionMarkets = await getOptionMarketsByMarketId(market.id);
-          if (optionMarkets && optionMarkets.length > 0) {
-            // 使用第一個 option market 的 priceYes（代表「是」選項的 Yes 機率）
-            const firstOption = optionMarkets[0];
-            const priceYes = parseFloat(firstOption.priceYes || '0.5');
-            setYesProbability(priceYes * 100); // priceYes 是 0-1 之間的小數，需要乘以 100
+          // 對於 LMSR 機制，必須從 option markets 獲取 priceYes
+          if (market.mechanism === 'LMSR_V2') {
+            try {
+              const optionMarkets = await getOptionMarketsByMarketId(market.id);
+              console.log(`[MarketCardUI] Fetched option markets for YES_NO market ${market.id}:`, {
+                count: optionMarkets?.length || 0,
+                markets: optionMarkets?.map(om => ({
+                  id: om.id,
+                  optionId: om.optionId,
+                  optionName: om.optionName,
+                  priceYes: om.priceYes,
+                })),
+              });
+              
+              if (optionMarkets && optionMarkets.length > 0) {
+                // 使用第一個 option market 的 priceYes（代表「是」選項的 Yes 機率）
+                const firstOption = optionMarkets[0];
+                const priceYes = parseFloat(firstOption.priceYes || '0.5');
+                if (!isNaN(priceYes) && priceYes >= 0 && priceYes <= 1) {
+                  setYesProbability(priceYes * 100); // priceYes 是 0-1 之間的小數，需要乘以 100
+                  console.log(`[MarketCardUI] Set YES probability for market ${market.id}:`, priceYes * 100);
+                } else {
+                  console.warn(`[MarketCardUI] Invalid priceYes for market ${market.id}:`, priceYes);
+                  // 如果 priceYes 無效，保持 null 狀態，不設置默認值
+                }
+              } else {
+                console.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
+                // 保持 yesProbability 為 null，讓 UI 顯示「載入機率中...」
+              }
+            } catch (error) {
+              console.error(`[MarketCardUI] Error fetching option markets for YES_NO market ${market.id}:`, error);
+              // 對於 LMSR 機制，不設置默認值，保持 null
+            }
           } else {
-            setYesProbability(50); // 默認值
+            // 非 LMSR 機制，可以使用 normalizeMarket 計算的機率
+            // 但為了保持一致性，也嘗試從 option markets 獲取
+            try {
+              const optionMarkets = await getOptionMarketsByMarketId(market.id);
+              if (optionMarkets && optionMarkets.length > 0) {
+                const firstOption = optionMarkets[0];
+                const priceYes = parseFloat(firstOption.priceYes || '0.5');
+                if (!isNaN(priceYes) && priceYes >= 0 && priceYes <= 1) {
+                  setYesProbability(priceYes * 100);
+                } else {
+                  // 使用 normalizeMarket 計算的機率作為後備
+                  setYesProbability(market.yesPercentage || 50);
+                }
+              } else {
+                // 使用 normalizeMarket 計算的機率
+                setYesProbability(market.yesPercentage || 50);
+              }
+            } catch (error) {
+              console.error(`[MarketCardUI] Error fetching option markets, using fallback:`, error);
+              // 使用 normalizeMarket 計算的機率作為後備
+              setYesProbability(market.yesPercentage || 50);
+            }
           }
         } else if (questionType === 'SINGLE_CHOICE') {
           // 單選題: 從 exclusive market 獲取前兩高的機率
