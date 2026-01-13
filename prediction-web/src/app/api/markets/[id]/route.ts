@@ -43,9 +43,26 @@ export async function GET(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({
-        error: "Backend request failed",
-      }));
+      let errorData;
+      try {
+        const text = await response.text();
+        console.error("[API /api/markets/[id]] Backend error response text:", text);
+        try {
+          errorData = JSON.parse(text);
+        } catch {
+          errorData = { error: text || "Backend request failed" };
+        }
+      } catch (e) {
+        errorData = { error: "Backend request failed" };
+      }
+      
+      console.error("[API /api/markets/[id]] Backend error:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+        url: backendUrl,
+      });
+      
       return NextResponse.json(errorData, { status: response.status });
     }
 
