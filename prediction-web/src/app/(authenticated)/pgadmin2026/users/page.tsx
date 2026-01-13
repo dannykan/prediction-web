@@ -335,7 +335,7 @@ export default function AdminUsersPage() {
                   const date = new Date(value);
                   return date.toLocaleDateString("zh-TW");
                 }}
-                formatter={(value: any, name: string) => {
+                formatter={(value: any, name?: string) => {
                   if (name === "count") {
                     return [`${value} 人`, "每日新增"];
                   } else if (name === "total") {
