@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
       },
-      // Allow caching for public markets
-      next: { revalidate: 60 },
+      // Don't cache in Cloudflare Pages (use cache: "no-store" instead)
+      cache: "no-store",
     });
 
     if (!response.ok) {
