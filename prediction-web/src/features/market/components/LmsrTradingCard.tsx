@@ -593,7 +593,17 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
     loadMarkets();
     loadPositions();
     loadUser();
-  }, [marketId]);
+    
+    // 定期刷新 optionMarkets 以獲取最新機率（每 5 秒）
+    const interval = setInterval(() => {
+      if (!isSingle) {
+        // 只刷新 option markets（是非題和多選題）
+        loadMarkets();
+      }
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [marketId, isSingle]);
 
   const loadUser = async () => {
     try {

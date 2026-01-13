@@ -159,6 +159,15 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
     };
 
     fetchProbabilities();
+    
+    // 定期刷新機率（每 5 秒），特別是對於 YES_NO 題型
+    if (market.questionType === 'YES_NO' && market.mechanism === 'LMSR_V2') {
+      const interval = setInterval(() => {
+        fetchProbabilities();
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
   }, [market.id, market.mechanism, market.questionType]);
 
   // 獲取分類名稱
