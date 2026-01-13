@@ -102,4 +102,45 @@
 ## 當前狀態
 
 - ✅ 前端代碼已改進錯誤處理
-- ⚠️ 等待後端確認 option markets 創建邏輯
+- ✅ 前端創建市場時已添加 `mechanism: "LMSR_V2"`
+- ✅ 後端 `createMarket` 方法會為 LMSR_V2 市場創建 option markets（第 1985-2012 行）
+- ⚠️ 需要檢查已存在的市場是否缺少 option markets
+
+## 可能的原因
+
+1. **舊市場沒有 option markets**：
+   - 如果市場是在修復之前創建的，可能沒有 option markets
+   - 需要為這些市場手動創建 option markets
+
+2. **創建失敗但沒有報錯**：
+   - Option markets 創建可能失敗但沒有拋出錯誤
+   - 需要檢查後端日誌
+
+3. **API 查詢問題**：
+   - `/option-markets/market/:marketId` API 可能查詢條件有誤
+   - 需要檢查查詢邏輯
+
+## 建議的檢查步驟
+
+1. **檢查特定市場**：
+   ```sql
+   -- 查詢市場的 option markets
+   SELECT om.*, m.title, m.question_type, m.mechanism
+   FROM option_markets om
+   JOIN markets m ON om."optionId" = ANY(
+     SELECT jsonb_array_elements(m.options)->>'id'::text
+   )
+   WHERE m.id = '2125e0fb-a016-4d16-80f0-77ba430b9dc9';
+   ```
+
+2. **檢查市場的選項 ID**：
+   ```sql
+   -- 查看市場的選項
+   SELECT id, title, question_type, mechanism, options
+   FROM markets
+   WHERE id = '2125e0fb-a016-4d16-80f0-77ba430b9dc9';
+   ```
+
+3. **檢查 option markets 是否正確關聯**：
+   - 確認 `option_markets.optionId` 是否匹配 `markets.options[].id`
+   - 對於 YES_NO 市場，應該有兩個 option markets（optionId: "yes" 和 "no"）
