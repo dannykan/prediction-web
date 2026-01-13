@@ -98,9 +98,7 @@ export function MarketDetailUIClient({
               }
             }
             
-            // 登入完成後立即刷新頁面
-            router.refresh();
-            // 同時使用 window.location.reload() 確保完整刷新（特別是在內嵌瀏覽器中）
+            // 登入完成後立即刷新頁面（使用 window.location.reload() 確保完整刷新，特別是在內嵌瀏覽器中）
             window.location.reload();
           } else {
             // 登入後獲取用戶數據失敗

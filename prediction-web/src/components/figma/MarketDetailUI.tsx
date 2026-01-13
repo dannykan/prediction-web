@@ -286,12 +286,8 @@ export function MarketDetailUI({
                 market={market}
                 onLogin={onLogin}
                 onTradeSuccess={async () => {
-                  // 交易成功後刷新頁面
-                  if (onRefresh) {
-                    await onRefresh();
-                  } else {
-                    window.location.reload();
-                  }
+                  // 交易成功後立即刷新頁面
+                  window.location.reload();
                 }}
               />
             </div>
