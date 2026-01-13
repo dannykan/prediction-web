@@ -24,10 +24,8 @@ const nextConfig: NextConfig = {
       'date-fns',
     ],
   },
-  // 啟用 SWC minify（默認已啟用，但明確設置）
-  swcMinify: true,
-  // 壓縮輸出
-  compress: true,
+  // Next.js 16 默認使用 SWC minify，無需明確設置
+  // compress 不是有效的 Next.js 配置選項
 };
 
 export default nextConfig;
