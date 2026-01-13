@@ -32,6 +32,32 @@ export async function generateMetadata({ params }: MarketPageProps): Promise<Met
   const canonicalUrl = absUrl(`/m/${market.shortcode}-${market.slug}`);
   const description = truncateText(market.description, 160);
 
+  // 使用市場自己的配圖，如果沒有則使用默認圖片
+  // 處理圖片 URL：如果是完整 URL 直接使用，如果是相對 URL 則添加 API base URL
+  const getOgImageUrl = (): string => {
+    if (!market.imageUrl) {
+      return absUrl("/og-default.png");
+    }
+    
+    // 如果已經是完整的 HTTP/HTTPS URL，直接使用
+    if (market.imageUrl.startsWith('http://') || market.imageUrl.startsWith('https://')) {
+      return market.imageUrl;
+    }
+    
+    // 如果是相對 URL，需要添加 API base URL（因為圖片存儲在後端）
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+    if (apiBaseUrl && apiBaseUrl !== 'https://example.com') {
+      // 確保 URL 以 / 開頭
+      const imagePath = market.imageUrl.startsWith('/') ? market.imageUrl : `/${market.imageUrl}`;
+      return `${apiBaseUrl}${imagePath}`;
+    }
+    
+    // 如果沒有配置 API base URL，嘗試使用 site URL（可能不正確，但至少不會出錯）
+    return absUrl(market.imageUrl.startsWith('/') ? market.imageUrl : `/${market.imageUrl}`);
+  };
+  
+  const ogImageUrl = getOgImageUrl();
+
   return {
     title: `${market.title} - 神預測 Prediction God`,
     description,
@@ -45,7 +71,7 @@ export async function generateMetadata({ params }: MarketPageProps): Promise<Met
       siteName: "神預測 Prediction God",
       images: [
         {
-          url: absUrl("/og-default.png"),
+          url: ogImageUrl,
           width: 1200,
           height: 630,
           alt: market.title,
@@ -58,7 +84,7 @@ export async function generateMetadata({ params }: MarketPageProps): Promise<Met
       card: "summary_large_image",
       title: market.title,
       description,
-      images: [absUrl("/og-default.png")],
+      images: [ogImageUrl],
     },
     robots: {
       index: true,
