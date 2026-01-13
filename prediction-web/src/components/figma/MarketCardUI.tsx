@@ -6,6 +6,7 @@ import { MessageCircle, BarChart3, Clock, Circle, X as XIcon } from 'lucide-reac
 import { formatDistanceToNow } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import type { Market } from '@/features/market/types/market';
+import { formatCurrency } from '@/shared/utils/format';
 import { 
   getOptionMarketsByMarketId, 
   type OptionMarketInfo,
@@ -199,7 +200,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
                   alt="G coin" 
                   className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0"
                 />
-                <span className="font-bold">{(market.totalVolume || 0).toLocaleString()}</span>
+                <span className="font-bold">{formatCurrency(market.totalVolume || 0)}</span>
               </div>
 
               {/* Prediction Buttons - Yes/No */}
