@@ -285,7 +285,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                 {/* 💰 區塊 2：這筆交易會花你多少 */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
                   <div className="text-base font-semibold">
-                    花費：{formatCurrency(Math.abs(parseFloat((quote as ExclusiveQuoteResult).netAmount)))} G Coin（含手續費）
+                    花費：{formatCurrency(Math.abs(parseFloat((quote as ExclusiveQuoteResult).netAmount)))} G Coin
                   </div>
                   <div className="text-sm text-gray-600">
                     你將獲得 {parseFloat((quote as ExclusiveQuoteResult).shares).toFixed(4)} 份部位
@@ -304,12 +304,10 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="text-sm text-gray-600 mb-1">若交易後立即平倉，約可拿回：</div>
                       <div className="text-lg font-semibold text-green-700">
-                        {formatCurrency(grossAmount * 0.96)} G Coin
+                        {formatCurrency(grossAmount)} G Coin
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         實際可拿回數量會隨市場價格變動
-                        <br />
-                        平倉時將扣除相應手續費
                       </div>
                     </div>
                   );
@@ -355,7 +353,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                 {/* 💰 區塊 2：這筆交易會花你多少 */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
                   <div className="text-base font-semibold">
-                    花費：{formatCurrency(Math.abs(parseFloat((quote as BundleQuoteResult).totalNetAmount)))} G Coin（含手續費）
+                    花費：{formatCurrency(Math.abs(parseFloat((quote as BundleQuoteResult).totalNetAmount)))} G Coin
                   </div>
                   <div className="text-sm text-gray-600">
                     你將獲得 {parseFloat((quote as BundleQuoteResult).totalShares).toFixed(4)} 份部位
@@ -373,12 +371,10 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="text-sm text-gray-600 mb-1">若交易後立即平倉，約可拿回：</div>
                       <div className="text-lg font-semibold text-green-700">
-                        {formatCurrency(totalGrossAmount * 0.96)} G Coin
+                        {formatCurrency(totalGrossAmount)} G Coin
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         實際可拿回數量會隨市場價格變動
-                        <br />
-                        平倉時將扣除相應手續費
                       </div>
                     </div>
                   );
@@ -421,7 +417,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                       : `你將反對「${currentMarket?.optionName}」`}
                   </div>
                   <div className="text-base">
-                    花費：{formatCurrency(parseFloat(amount))} G Coin（含手續費）
+                    花費：{formatCurrency(parseFloat(amount))} G Coin
                   </div>
                 </div>
 
@@ -434,12 +430,10 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="text-sm text-gray-600 mb-1">若交易後立即平倉，約可拿回：</div>
                       <div className="text-lg font-semibold text-green-700">
-                        {formatCurrency(grossAmount * 0.96)} G Coin
+                        {formatCurrency(grossAmount)} G Coin
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         實際可拿回數量會隨市場價格變動
-                        <br />
-                        平倉時將扣除相應手續費
                       </div>
                     </div>
                   );

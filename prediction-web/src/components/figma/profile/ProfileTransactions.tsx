@@ -95,7 +95,6 @@ const formatTransactionType = (transaction: Transaction) => {
     MARKET_REFUND: "市場退款",
     MARKET_CREATION_FEE: "創建市場",
     CREATOR_COMMISSION: "創作者佣金",
-    PLATFORM_FEE: "平台手續費",
     ADMIN_ADJUSTMENT: "管理員調整",
     DEPOSIT_IAP: "儲值",
   };

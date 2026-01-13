@@ -215,10 +215,8 @@ export function LmsrOptionCard({
                     <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded">
                       <div className="text-sm space-y-1">
                         <div>可成交: {parseFloat(quote.shares).toFixed(4)} shares</div>
-                        <div>總成本: {parseFloat(quote.grossAmount).toFixed(2)} G Coin</div>
-                        <div>手續費: {parseFloat(quote.feeAmount).toFixed(2)} G Coin</div>
                         <div className="font-bold">
-                          淨額: {parseFloat(quote.netAmount).toFixed(2)} G Coin
+                          總成本: {parseFloat(quote.grossAmount).toFixed(2)} G Coin
                         </div>
                         <div className="text-xs text-muted-foreground">
                           成交後 YES%: {formatPercentage(parseFloat(quote.priceYesAfter))}
