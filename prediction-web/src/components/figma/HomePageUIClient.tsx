@@ -259,23 +259,28 @@ export function HomePageUIClient({
     // 創建新的 AbortController
     abortControllerRef.current = new AbortController();
     
-    // 使用 startTransition 標記為非緊急更新，讓 URL 更新不會阻塞 UI
-    startTransition(() => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (category === '全部') {
-        params.delete('categoryId');
+    // 立即更新 URL（使用 window.history 直接更新，不等待 router）
+    const params = new URLSearchParams(searchParams.toString());
+    if (category === '全部') {
+      params.delete('categoryId');
+    } else {
+      // 找到對應的分類 ID
+      const categoryObj = categories.find(cat => cat.name === category);
+      if (categoryObj) {
+        params.set('categoryId', categoryObj.id);
       } else {
-        // 找到對應的分類 ID
-        const categoryObj = categories.find(cat => cat.name === category);
-        if (categoryObj) {
-          params.set('categoryId', categoryObj.id);
-        } else {
-          // Fallback: 如果找不到，使用名稱（向後兼容）
-          params.set('categoryId', category);
-        }
+        // Fallback: 如果找不到，使用名稱（向後兼容）
+        params.set('categoryId', category);
       }
-      // 使用 replace 而不是 push，因為這是同一個頁面，只是參數變化
-      router.replace(`/home?${params.toString()}`, { scroll: false });
+    }
+    
+    // 使用 window.history 直接更新 URL，立即生效
+    const newUrl = `/home?${params.toString()}`;
+    window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+    
+    // 然後在後台使用 router.replace 同步狀態（不阻塞 UI）
+    startTransition(() => {
+      router.replace(newUrl, { scroll: false });
     });
   };
 
@@ -292,27 +297,32 @@ export function HomePageUIClient({
     // 創建新的 AbortController
     abortControllerRef.current = new AbortController();
     
-    // 使用 startTransition 標記為非緊急更新，讓 URL 更新不會阻塞 UI
+    // 立即更新 URL（使用 window.history 直接更新，不等待 router）
+    const params = new URLSearchParams(searchParams.toString());
+    
+    // 映射 Figma 的篩選名稱到主項目的篩選值
+    const filterMap: Record<string, string> = {
+      '熱門': 'all',
+      '最新': 'latest',
+      '倒數中': 'closingSoon',
+      '已關注': 'followed',
+      '已下注': 'myBets',
+    };
+    
+    const mappedFilter = filterMap[filter] || 'all';
+    if (mappedFilter === 'all') {
+      params.delete('filter');
+    } else {
+      params.set('filter', mappedFilter);
+    }
+    
+    // 使用 window.history 直接更新 URL，立即生效
+    const newUrl = `/home?${params.toString()}`;
+    window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+    
+    // 然後在後台使用 router.replace 同步狀態（不阻塞 UI）
     startTransition(() => {
-      const params = new URLSearchParams(searchParams.toString());
-      
-      // 映射 Figma 的篩選名稱到主項目的篩選值
-      const filterMap: Record<string, string> = {
-        '熱門': 'all',
-        '最新': 'latest',
-        '倒數中': 'closingSoon',
-        '已關注': 'followed',
-        '已下注': 'myBets',
-      };
-      
-      const mappedFilter = filterMap[filter] || 'all';
-      if (mappedFilter === 'all') {
-        params.delete('filter');
-      } else {
-        params.set('filter', mappedFilter);
-      }
-      // 使用 replace 而不是 push，因為這是同一個頁面，只是參數變化
-      router.replace(`/home?${params.toString()}`, { scroll: false });
+      router.replace(newUrl, { scroll: false });
     });
   };
 
