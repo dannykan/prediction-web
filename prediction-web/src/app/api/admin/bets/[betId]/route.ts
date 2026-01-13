@@ -13,11 +13,11 @@ import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { betId: string } }
+  { params }: { params: Promise<{ betId: string }> }
 ) {
   try {
     const apiBaseUrl = getApiBaseUrl();
-    const betId = params.betId;
+    const { betId } = await params;
     const body = await request.json();
 
     // Backend /admin/bets/:betId DELETE requires admin authentication

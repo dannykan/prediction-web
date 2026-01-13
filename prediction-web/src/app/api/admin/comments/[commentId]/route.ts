@@ -13,11 +13,11 @@ import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { commentId: string } }
+  { params }: { params: Promise<{ commentId: string }> }
 ) {
   try {
     const apiBaseUrl = getApiBaseUrl();
-    const commentId = params.commentId;
+    const { commentId } = await params;
     const body = await request.json();
 
     // Backend /admin/comments/:commentId PATCH requires admin authentication
@@ -53,11 +53,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { commentId: string } }
+  { params }: { params: Promise<{ commentId: string }> }
 ) {
   try {
     const apiBaseUrl = getApiBaseUrl();
-    const commentId = params.commentId;
+    const { commentId } = await params;
     const body = await request.json();
 
     // Backend /admin/comments/:commentId DELETE requires admin authentication
