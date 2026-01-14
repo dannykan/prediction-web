@@ -263,9 +263,19 @@ export function ProfileTransactions({ transactions }: ProfileTransactionsProps) 
                         <span className="text-slate-900 font-normal">
                           {typeInfo.title}
                           {typeInfo.optionName && ` ${typeInfo.optionName}`}
+                          {/* 圈圈叉叉圖標要接著答案選項後面顯示 */}
+                          {(isLMSRTrade || transaction.type === "BET_WIN") && getBetIcon(transaction)}
                         </span>
                       )}
-                      {isLMSRTrade && getBetIcon(transaction)}
+                      {/* 如果沒有題目但有選項名稱，圖標也要顯示在選項名稱後面 */}
+                      {!typeInfo.title && typeInfo.optionName && (
+                        <span className="text-slate-900 font-normal">
+                          {typeInfo.optionName}
+                          {(isLMSRTrade || transaction.type === "BET_WIN") && getBetIcon(transaction)}
+                        </span>
+                      )}
+                      {/* 如果既沒有題目也沒有選項名稱，但需要顯示圖標（LMSR Trade） */}
+                      {!typeInfo.title && !typeInfo.optionName && isLMSRTrade && getBetIcon(transaction)}
                     </div>
                   </td>
 
@@ -363,9 +373,19 @@ export function ProfileTransactions({ transactions }: ProfileTransactionsProps) 
                     <span className="text-slate-900 font-normal">
                       {typeInfo.title}
                       {typeInfo.optionName && ` ${typeInfo.optionName}`}
+                      {/* 圈圈叉叉圖標要接著答案選項後面顯示 */}
+                      {(isLMSRTrade || transaction.type === "BET_WIN") && getBetIcon(transaction)}
                     </span>
                   )}
-                  {isLMSRTrade && getBetIcon(transaction)}
+                  {/* 如果沒有題目但有選項名稱，圖標也要顯示在選項名稱後面 */}
+                  {!typeInfo.title && typeInfo.optionName && (
+                    <span className="text-slate-900 font-normal">
+                      {typeInfo.optionName}
+                      {(isLMSRTrade || transaction.type === "BET_WIN") && getBetIcon(transaction)}
+                    </span>
+                  )}
+                  {/* 如果既沒有題目也沒有選項名稱，但需要顯示圖標（LMSR Trade） */}
+                  {!typeInfo.title && !typeInfo.optionName && isLMSRTrade && getBetIcon(transaction)}
                 </div>
                 <div className="flex items-center gap-1">
                   <Image
