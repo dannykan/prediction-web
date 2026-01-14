@@ -615,18 +615,22 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
       setPositionsLoading(true);
       if (isSingle) {
         // 單選題使用 exclusive market positions
+        console.log('[LmsrTradingCard] Loading exclusive market positions for single choice');
         const data = await getExclusiveMarketPositions(marketId);
+        console.log('[LmsrTradingCard] Exclusive positions loaded:', data.length);
         setExclusivePositions(data);
         setPositions([]); // Clear option market positions
       } else {
         // 其他題型使用 option market positions
+        console.log('[LmsrTradingCard] Loading option market positions for', isBinary ? 'YES_NO' : 'MULTIPLE_CHOICE');
         const data = await getUserPositions(marketId);
+        console.log('[LmsrTradingCard] Option positions loaded:', data.length, data);
         setPositions(data);
         setExclusivePositions([]); // Clear exclusive positions
       }
     } catch (err: any) {
       // 靜默處理錯誤，未登入時返回空陣列
-      console.warn('Failed to load positions (user may not be logged in):', err.message);
+      console.warn('[LmsrTradingCard] Failed to load positions (user may not be logged in):', err.message);
       setPositions([]);
       setExclusivePositions([]);
     } finally {
