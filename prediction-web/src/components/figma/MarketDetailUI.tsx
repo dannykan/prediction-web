@@ -85,7 +85,7 @@ export function MarketDetailUI({
   };
 
   const handleBack = () => {
-    router.back();
+    router.push('/home');
   };
 
   // 獲取分類名稱
@@ -143,8 +143,7 @@ export function MarketDetailUI({
                 className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 transition-colors text-sm"
               >
                 <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="hidden md:inline">返回市場列表</span>
-                <span className="md:hidden">返回</span>
+                <span>返回</span>
               </button>
 
               <div className="flex items-center gap-2">
