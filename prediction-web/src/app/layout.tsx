@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "預測市場平台 - 預測未來，贏得獎勵",
   icons: {
     icon: [
-      { url: "/images/logo.png", type: "image/png" },
+      { url: "/images/logo.png", type: "image/png", sizes: "any" },
     ],
     shortcut: "/images/logo.png",
     apple: "/images/logo.png",

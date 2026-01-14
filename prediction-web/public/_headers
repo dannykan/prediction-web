@@ -1,0 +1,10 @@
+# Cloudflare Pages headers
+# Force no-cache for favicon and icon files to ensure updates are reflected
+/images/logo.png
+  Cache-Control: public, max-age=0, must-revalidate
+
+/favicon.ico
+  Cache-Control: public, max-age=0, must-revalidate
+
+/icon.png
+  Cache-Control: public, max-age=0, must-revalidate
