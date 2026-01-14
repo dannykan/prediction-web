@@ -36,9 +36,10 @@ declare global {
 }
 
 /**
- * Initialize Google Sign In with popup mode
+ * Initialize Google Sign In
+ * Optionally enables One Tap automatic sign-in on page load
  */
-export async function initializeGoogleSignIn(): Promise<void> {
+export async function initializeGoogleSignIn(enableOneTap: boolean = false): Promise<void> {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   if (!googleClientId) {
     throw new Error("NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set");
@@ -54,6 +55,55 @@ export async function initializeGoogleSignIn(): Promise<void> {
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("Failed to load Google Identity Services"));
       document.head.appendChild(script);
+    });
+  }
+
+  // If One Tap is enabled, initialize it for automatic sign-in
+  if (enableOneTap) {
+    window.google!.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: async (response: { credential: string }) => {
+        try {
+          console.log("[GoogleSignIn] One Tap automatic sign-in: Google ID Token received");
+          
+          // Send ID token to backend via BFF
+          const loginResponse = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              idToken: response.credential,
+            }),
+          });
+
+          if (loginResponse.ok) {
+            const data = await loginResponse.json();
+            console.log("[GoogleSignIn] One Tap automatic sign-in successful:", {
+              userId: data.user?.id,
+              email: data.user?.email,
+            });
+            // Trigger page refresh to update UI with new login state
+            if (typeof window !== 'undefined') {
+              window.location.reload();
+            }
+          } else {
+            console.warn("[GoogleSignIn] One Tap automatic sign-in failed:", await loginResponse.json());
+          }
+        } catch (error) {
+          console.error("[GoogleSignIn] One Tap automatic sign-in error:", error);
+        }
+      },
+      auto_select: true, // Enable automatic sign-in
+      ux_mode: "popup",
+    });
+
+    // Trigger One Tap prompt
+    window.google!.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed || notification.isSkippedMoment || notification.isDismissedMoment) {
+        console.log("[GoogleSignIn] One Tap not displayed on page load:", notification.reason);
+      }
     });
   }
 }
