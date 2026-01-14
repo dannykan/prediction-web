@@ -250,7 +250,7 @@ export function QuestsUI({
                       <div className="flex items-center gap-1">
                         <Gift className="w-4 h-4 text-yellow-600" />
                         <GCoinIcon size={16} />
-                        <span className="font-bold text-slate-900">{quest.reward.toLocaleString()}</span>
+                        <span className="font-bold text-slate-900">{quest.reward.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       {isClaiming ? (
                         <div className="px-4 py-2 bg-slate-100 text-slate-400 text-sm font-bold rounded-lg flex items-center gap-1">

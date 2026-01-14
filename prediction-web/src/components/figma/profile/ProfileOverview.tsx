@@ -70,7 +70,7 @@ export function ProfileOverview({ user, statistics, userCreatedAt, userId }: Pro
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <FileText className="w-3.5 h-3.5 md:w-5 md:h-5 text-slate-600" />
-                <span className="text-xs md:text-sm text-slate-600">記錄</span>
+                <span className="text-xs md:text-sm text-slate-600">餘額</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Image

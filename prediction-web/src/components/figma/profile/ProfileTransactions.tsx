@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUpRight, ArrowDownRight, Plus, Minus, Activity } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import Image from 'next/image';
 import type { Transaction } from '@/features/user/api/getUserTransactions';
@@ -31,52 +31,30 @@ const parseLMSRTradeDescription = (transaction: Transaction) => {
   return { action };
 };
 
-// Format transaction type for display
-const formatTransactionType = (transaction: Transaction) => {
+// Format transaction type for display - 返回 action 和題目/選項的拆分信息
+const formatTransactionType = (transaction: Transaction): { action: string; title?: string; optionName?: string } => {
   const isLMSRTrade = transaction.description?.includes("LMSR Trade:") || 
                      transaction.description?.includes("Exclusive Market Trade:");
   
   if (transaction.marketInfo && isLMSRTrade) {
     const lmsrInfo = parseLMSRTradeDescription(transaction);
     if (!lmsrInfo) {
-      return transaction.type;
+      return { action: transaction.type };
     }
 
     const { action } = lmsrInfo;
-    const { marketTitle, questionType, optionName, side } = transaction.marketInfo;
+    const { marketTitle, questionType, optionName } = transaction.marketInfo;
     
-    const sideDisplay = side === 'YES' ? 'O' : 'X';
-    const normalizedQuestionType = questionType?.toUpperCase();
-    
-    if (normalizedQuestionType === 'YES_NO') {
-      return `${action} ${marketTitle} ${sideDisplay}`;
-    } else if (
-      normalizedQuestionType === 'SINGLE_CHOICE' || 
-      normalizedQuestionType === 'MULTIPLE_CHOICE' ||
-      normalizedQuestionType === 'SINGLE' ||
-      normalizedQuestionType === 'MULTIPLE'
-    ) {
-      if (optionName) {
-        return `${action} ${marketTitle} ${optionName} ${sideDisplay}`;
-      } else {
-        return `${action} ${marketTitle} ${sideDisplay}`;
-      }
-    } else {
-      if (optionName) {
-        return `${action} ${marketTitle} ${optionName} ${sideDisplay}`;
-      } else {
-        return `${action} ${marketTitle} ${sideDisplay}`;
-      }
-    }
+    return {
+      action,
+      title: marketTitle,
+      optionName: optionName || undefined,
+    };
   }
   
   const lmsrInfo = parseLMSRTradeDescription(transaction);
   if (lmsrInfo) {
-    const description = transaction.description || "";
-    const yesMatch = description.match(/\bYES\b/i);
-    const noMatch = description.match(/\bNO\b/i);
-    const side = yesMatch ? "O" : noMatch ? "X" : "";
-    return side ? `${lmsrInfo.action} ${side}` : lmsrInfo.action;
+    return { action: lmsrInfo.action };
   }
   
   const typeMap: Record<string, string> = {
@@ -99,12 +77,41 @@ const formatTransactionType = (transaction: Transaction) => {
     DEPOSIT_IAP: "儲值",
   };
   
-  return typeMap[transaction.type] || transaction.type || "未知交易";
+  return { action: typeMap[transaction.type] || transaction.type || "未知交易" };
 };
 
 const getTypeIcon = (transaction: Transaction) => {
+  const isLMSRTrade = transaction.description?.includes("LMSR Trade:") || 
+                     transaction.description?.includes("Exclusive Market Trade:");
+  
+  if (isLMSRTrade) {
+    const lmsrInfo = parseLMSRTradeDescription(transaction);
+    if (lmsrInfo?.action === "下注") {
+      return <span className="text-base">🚀</span>; // 下注
+    } else if (lmsrInfo?.action === "平倉") {
+      return <span className="text-base">🧾</span>; // 平倉
+    }
+  }
+  
   const type = transaction.type || "";
-  if (type.includes("WIN") || type.includes("REWARD") || type.includes("BONUS")) {
+  
+  // 任務獎勵類型
+  if (type.includes("REWARD") || type.includes("BONUS") || 
+      type === "DAILY_BONUS" || type === "AD_REWARD" || 
+      type === "NEW_USER_GIFT" || type === "NEWCOMER_REWARD" ||
+      type === "REFERRAL_BONUS" || type === "REFERRAL_REWARD" ||
+      type === "VIP_REWARD" || type === "QUEST_REWARD" ||
+      type === "BANKRUPTCY_REWARD") {
+    return <span className="text-base">🎁</span>; // 任務獎勵
+  }
+  
+  // 系統調整
+  if (type === "ADMIN_ADJUSTMENT") {
+    return <span className="text-base">🛠️</span>; // 系統調整
+  }
+  
+  // 其他類型保持原樣
+  if (type.includes("WIN")) {
     return <ArrowUpRight className="w-4 h-4 text-green-600" />;
   }
   if (type.includes("STAKE") || type.includes("LOSS") || transaction.amount < 0) {
@@ -122,6 +129,42 @@ const getTypeColor = (transaction: Transaction) => {
     return 'text-red-600 bg-red-50';
   }
   return 'text-slate-600 bg-slate-50';
+};
+
+// 獲取任務獎勵的詳情文字
+const getQuestDetailText = (transaction: Transaction): string | null => {
+  const type = transaction.type || "";
+  const typeMap: Record<string, string> = {
+    DAILY_BONUS: "每日簽到",
+    AD_REWARD: "廣告獎勵",
+    NEW_USER_GIFT: "新用戶禮包",
+    NEWCOMER_REWARD: "新手禮包",
+    REFERRAL_BONUS: "推薦獎金",
+    REFERRAL_REWARD: "推薦獎勵",
+    VIP_REWARD: "VIP獎勵",
+    QUEST_REWARD: "任務獎勵",
+    BANKRUPTCY_REWARD: "破產補助",
+  };
+  
+  if (typeMap[type]) {
+    return typeMap[type];
+  }
+  return null;
+};
+
+// 格式化時間顯示：超過1小時顯示完整日期時間格式
+const formatTransactionTime = (createdAt: string): string => {
+  const transactionDate = new Date(createdAt);
+  const now = new Date();
+  const diffInHours = (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
+  
+  if (diffInHours >= 1) {
+    // 超過1小時，顯示完整格式：YYYY/MM/DD HH:mm:ss
+    return format(transactionDate, 'yyyy/MM/dd HH:mm:ss', { locale: zhTW });
+  } else {
+    // 1小時內，顯示相對時間
+    return formatDistanceToNow(transactionDate, { addSuffix: true, locale: zhTW });
+  }
 };
 
 const getBetIcon = (transaction: Transaction) => {
@@ -160,10 +203,11 @@ export function ProfileTransactions({ transactions }: ProfileTransactionsProps) 
           </thead>
           <tbody className="divide-y divide-slate-200">
             {transactions.map((transaction) => {
-              const displayText = formatTransactionType(transaction);
+              const typeInfo = formatTransactionType(transaction);
               const isLMSRTrade = transaction.description?.includes("LMSR Trade:") || 
                                  transaction.description?.includes("Exclusive Market Trade:");
               const marketShortcode = transaction.marketInfo?.marketShortcode;
+              const questDetailText = getQuestDetailText(transaction);
               
               return (
                 <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
@@ -171,14 +215,27 @@ export function ProfileTransactions({ transactions }: ProfileTransactionsProps) 
                   <td className="px-4 py-3">
                     <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(transaction)}`}>
                       {getTypeIcon(transaction)}
-                      <span>{displayText}</span>
+                      <span>{typeInfo.action}</span>
+                      {/* 題目和選項名稱使用預設顏色顯示 */}
+                      {typeInfo.title && (
+                        <span className="text-slate-900 font-normal">
+                          {typeInfo.title}
+                          {typeInfo.optionName && ` ${typeInfo.optionName}`}
+                        </span>
+                      )}
                       {isLMSRTrade && getBetIcon(transaction)}
                     </div>
                   </td>
 
                   {/* Details */}
                   <td className="px-4 py-3">
-                    {transaction.marketInfo?.marketTitle ? (
+                    {/* 下注、平倉不顯示題目內容（避免重複） */}
+                    {isLMSRTrade ? (
+                      <p className="text-sm text-slate-500">-</p>
+                    ) : questDetailText ? (
+                      // 任務獎勵類型顯示任務詳情
+                      <p className="text-sm text-slate-900">{questDetailText}</p>
+                    ) : transaction.marketInfo?.marketTitle ? (
                       marketShortcode ? (
                         <Link 
                           href={`/m/${marketShortcode}`}
@@ -233,7 +290,7 @@ export function ProfileTransactions({ transactions }: ProfileTransactionsProps) 
                   {/* Time */}
                   <td className="px-4 py-3 text-right">
                     <span className="text-xs text-slate-500">
-                      {formatDistanceToNow(new Date(transaction.createdAt), { addSuffix: true, locale: zhTW })}
+                      {formatTransactionTime(transaction.createdAt)}
                     </span>
                   </td>
                 </tr>
@@ -246,10 +303,11 @@ export function ProfileTransactions({ transactions }: ProfileTransactionsProps) 
       {/* Mobile Card View */}
       <div className="md:hidden divide-y divide-slate-200">
         {transactions.map((transaction) => {
-          const displayText = formatTransactionType(transaction);
+          const typeInfo = formatTransactionType(transaction);
           const isLMSRTrade = transaction.description?.includes("LMSR Trade:") || 
                              transaction.description?.includes("Exclusive Market Trade:");
           const marketShortcode = transaction.marketInfo?.marketShortcode;
+          const questDetailText = getQuestDetailText(transaction);
           
           return (
             <div key={transaction.id} className="p-3">
@@ -257,7 +315,14 @@ export function ProfileTransactions({ transactions }: ProfileTransactionsProps) 
               <div className="flex items-start justify-between mb-2">
                 <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getTypeColor(transaction)}`}>
                   {getTypeIcon(transaction)}
-                  <span>{displayText}</span>
+                  <span>{typeInfo.action}</span>
+                  {/* 題目和選項名稱使用預設顏色顯示 */}
+                  {typeInfo.title && (
+                    <span className="text-slate-900 font-normal">
+                      {typeInfo.title}
+                      {typeInfo.optionName && ` ${typeInfo.optionName}`}
+                    </span>
+                  )}
                   {isLMSRTrade && getBetIcon(transaction)}
                 </div>
                 <div className="flex items-center gap-1">
@@ -277,8 +342,10 @@ export function ProfileTransactions({ transactions }: ProfileTransactionsProps) 
                 </div>
               </div>
 
-              {/* Market Title */}
-              {transaction.marketInfo?.marketTitle && (
+              {/* Details - 下注、平倉不顯示題目內容（避免重複），任務獎勵顯示任務詳情 */}
+              {isLMSRTrade ? null : questDetailText ? (
+                <p className="text-xs text-slate-700 mb-1.5">{questDetailText}</p>
+              ) : transaction.marketInfo?.marketTitle ? (
                 <p className="text-xs text-slate-700 mb-1.5 line-clamp-2">
                   {marketShortcode ? (
                     <Link 
@@ -291,12 +358,12 @@ export function ProfileTransactions({ transactions }: ProfileTransactionsProps) 
                     transaction.marketInfo.marketTitle
                   )}
                 </p>
-              )}
+              ) : null}
 
               {/* Balance and Time */}
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">
-                  {formatDistanceToNow(new Date(transaction.createdAt), { addSuffix: true, locale: zhTW })}
+                  {formatTransactionTime(transaction.createdAt)}
                 </span>
                 <div className="flex items-center gap-1">
                   <span className="text-slate-500">餘額</span>

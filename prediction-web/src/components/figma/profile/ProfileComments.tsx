@@ -93,7 +93,7 @@ export function ProfileComments({ comments }: ProfileCommentsProps) {
                       height={12}
                       className="w-3 h-3 ml-0.5"
                     />
-                    <span className="font-bold text-indigo-700">{Math.abs(parseFloat(userBet.stakeAmount || "0")).toLocaleString()}</span>
+                    <span className="font-bold text-indigo-700">{Math.abs(parseFloat(userBet.stakeAmount || "0")).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 );
               })()}

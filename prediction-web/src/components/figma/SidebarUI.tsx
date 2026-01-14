@@ -191,9 +191,13 @@ export function SidebarUI({ isOpen, onClose, isLoggedIn, user, onLogin, onLogout
           {/* Invite Code Section */}
           {isLoggedIn && user?.inviteCode && (
             <div className="mt-6 p-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-amber-200">
-              <h3 className="font-bold text-sm text-slate-700 mb-2 flex items-center gap-1">
+              <h3 className="font-bold text-sm text-slate-700 mb-2 flex items-center gap-1.5 flex-wrap">
                 <span>🎁</span>
-                邀請碼
+                <span>成功邀請朋友可獲得</span>
+                <div className="flex items-center gap-1">
+                  <GCoinIcon size={16} priority={true} />
+                  <span className="font-extrabold text-amber-600">1000</span>
+                </div>
               </h3>
               
               {/* My Invite Code */}

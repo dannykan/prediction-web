@@ -930,6 +930,14 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
       // Reload positions and markets
       await loadPositions();
       await loadMarkets();
+      
+      // 調用平倉成功回調，觸發頁面刷新
+      if (onTradeSuccess) {
+        await onTradeSuccess();
+      } else {
+        // 如果沒有回調，直接刷新頁面
+        window.location.reload();
+      }
     } catch (err: any) {
       console.error('[LmsrTradingCard] Close position error:', err);
       alert(err.message || '平倉失敗');

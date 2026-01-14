@@ -48,13 +48,18 @@ export function LeaderboardUI({
   const getScoreDisplay = (entry: LeaderboardEntry) => {
     if (leaderboardType === 'profit_rate') {
       const profitRate = entry.profitRate ?? 0;
-      return <span className="text-green-600">+{profitRate.toFixed(1)}%</span>;
+      const isPositive = profitRate >= 0;
+      return (
+        <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
+          {isPositive ? '+' : ''}{profitRate.toFixed(1)}%
+        </span>
+      );
     } else if (leaderboardType === 'profit_amount') {
       const pnl = entry.pnl ?? 0;
       return (
         <div className="flex items-center gap-1">
           <GCoinIcon size={16} />
-          <span className="text-green-600">+{Math.abs(pnl).toLocaleString()}</span>
+          <span className="text-green-600">+{Math.abs(pnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
       );
     } else {
@@ -62,14 +67,14 @@ export function LeaderboardUI({
       return (
         <div className="flex items-center gap-1">
           <GCoinIcon size={16} />
-          <span className="text-red-600">-{Math.abs(loss).toLocaleString()}</span>
+          <span className="text-red-600">-{Math.abs(loss).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
       );
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-3 md:px-4 py-4 md:py-6 pb-32">
+    <div className="max-w-4xl mx-auto px-3 md:px-4 py-4 md:py-6">
       {/* Page Header */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-2">
@@ -281,42 +286,6 @@ export function LeaderboardUI({
         </div>
       )}
 
-      {/* My Ranking - Fixed Bottom */}
-      {currentUserRank && (
-        <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-slate-200 shadow-lg z-20">
-          <div className="max-w-4xl mx-auto px-3 md:px-4 py-2.5">
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-slate-600 font-bold text-sm md:text-base">
-                  #{currentUserRank.rank || 0}
-                </div>
-              </div>
-              {currentUserRank.avatarUrl && currentUserRank.avatarUrl.trim() !== '' ? (
-                <img
-                  src={currentUserRank.avatarUrl}
-                  alt={currentUserRank.displayName || 'User'}
-                  className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white text-sm md:text-base font-bold flex-shrink-0">
-                  {(currentUserRank.displayName || 'U')[0]?.toUpperCase()}
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-slate-900 text-sm md:text-base truncate">我的排名</h3>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="font-bold text-sm md:text-base">
-                  {getScoreDisplay(currentUserRank)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

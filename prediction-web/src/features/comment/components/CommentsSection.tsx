@@ -18,9 +18,10 @@ interface CommentsSectionProps {
   loading?: boolean;
   highlightCommentId?: string; // Comment ID to scroll to and highlight
   questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE'; // Market question type
+  onCommentsCountChange?: (count: number) => void; // Callback when comments count changes
 }
 
-export function CommentsSection({ marketId, userId, highlightCommentId, questionType }: CommentsSectionProps) {
+export function CommentsSection({ marketId, userId, highlightCommentId, questionType, onCommentsCountChange }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -49,7 +50,12 @@ export function CommentsSection({ marketId, userId, highlightCommentId, question
         setComments((prev) => [...prev, ...(response.comments || [])]);
       }
       setHasMore(response.hasMore || false);
-      setTotal(response.total || 0);
+      const newTotal = response.total || 0;
+      setTotal(newTotal);
+      // Notify parent component of comments count change
+      if (onCommentsCountChange) {
+        onCommentsCountChange(newTotal);
+      }
     } catch (error) {
       console.error("Failed to load comments:", error);
     } finally {
@@ -67,7 +73,12 @@ export function CommentsSection({ marketId, userId, highlightCommentId, question
         userId: undefined, // Don't pass userId for guests
         includeUserBets: false,
       });
-      setTotal(response.total || 0);
+      const newTotal = response.total || 0;
+      setTotal(newTotal);
+      // Notify parent component of comments count change
+      if (onCommentsCountChange) {
+        onCommentsCountChange(newTotal);
+      }
     } catch (error) {
       console.error("Failed to load comment count:", error);
     } finally {
@@ -133,7 +144,14 @@ export function CommentsSection({ marketId, userId, highlightCommentId, question
       setSubmitting(true);
       const newComment = await createComment(marketId, commentText.trim(), userId);
       setComments((prev) => [newComment, ...prev]);
-      setTotal((prev) => prev + 1);
+      setTotal((prev) => {
+        const updated = prev + 1;
+        // Notify parent component of comments count change
+        if (onCommentsCountChange) {
+          onCommentsCountChange(updated);
+        }
+        return updated;
+      });
       setCommentText("");
     } catch (error) {
       console.error("Failed to create comment:", error);

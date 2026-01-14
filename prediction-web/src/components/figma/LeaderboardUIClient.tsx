@@ -15,6 +15,7 @@ import type { UserStatistics } from '@/features/user/types/user-statistics';
 import type { LeaderboardEntry, LeaderboardType } from '@/features/leaderboard/types/leaderboard';
 import { getTimeLeft, getSeasonCode, DEFAULT_SEASONS } from '@/features/leaderboard/utils/season';
 import { signInWithGooglePopup } from '@/core/auth/googleSignIn';
+import { GCoinIcon } from '@/components/GCoinIcon';
 
 type LeaderboardUIType = 'profit_rate' | 'profit_amount' | 'loss_amount';
 
@@ -287,6 +288,70 @@ export function LeaderboardUIClient({ initialData, currentUserId }: LeaderboardU
           />
         </PullToRefresh>
       </div>
+
+      {/* My Ranking - Fixed Bottom (outside PullToRefresh to ensure fixed positioning works) */}
+      {currentUserRank && (
+        <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-slate-200 shadow-lg z-30">
+          <div className="max-w-4xl mx-auto px-3 md:px-4 py-2.5">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-slate-600 font-bold text-sm md:text-base">
+                  #{currentUserRank.rank || 0}
+                </div>
+              </div>
+              {currentUserRank.avatarUrl && currentUserRank.avatarUrl.trim() !== '' ? (
+                <img
+                  src={currentUserRank.avatarUrl}
+                  alt={currentUserRank.displayName || 'User'}
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0 object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white text-sm md:text-base font-bold flex-shrink-0">
+                  {(currentUserRank.displayName || 'U')[0]?.toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-slate-900 text-sm md:text-base truncate">我的排名</h3>
+              </div>
+              <div className="flex-shrink-0">
+                <div className="font-bold text-sm md:text-base">
+                  {(() => {
+                    // getScoreDisplay helper function
+                    if (leaderboardUIType === 'profit_rate') {
+                      const profitRate = currentUserRank.profitRate ?? 0;
+                      const isPositive = profitRate >= 0;
+                      return (
+                        <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
+                          {isPositive ? '+' : ''}{profitRate.toFixed(1)}%
+                        </span>
+                      );
+                    } else if (leaderboardUIType === 'profit_amount') {
+                      const pnl = currentUserRank.pnl ?? 0;
+                      return (
+                        <div className="flex items-center gap-1">
+                          <GCoinIcon size={16} />
+                          <span className="text-green-600">+{Math.abs(pnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                      );
+                    } else {
+                      const loss = currentUserRank.loss ?? currentUserRank.totalLosses ?? 0;
+                      return (
+                        <div className="flex items-center gap-1">
+                          <GCoinIcon size={16} />
+                          <span className="text-red-600">-{Math.abs(loss).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -352,7 +352,7 @@ export function QuestsUIClient() {
               <p className="font-bold">恭喜！領取獎勵成功</p>
               <div className="flex items-center gap-1 mt-1">
                 <GCoinIcon size={16} />
-                <span className="text-lg font-bold">+{lastReward.toLocaleString()}</span>
+                <span className="text-lg font-bold">+{lastReward.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>

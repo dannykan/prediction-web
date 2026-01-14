@@ -79,14 +79,18 @@ export function ProfileUI({
   };
 
   // Calculate user data for display
-  const totalAssets = statistics?.statistics?.profitRate?.total?.totalAssets || 0;
   const balance = statistics?.statistics?.profitRate?.total?.coinBalance || 0;
-  const totalPending = statistics?.statistics?.profitRate?.total?.totalPending || 0;
   
-  // Calculate unrealized PnL from positions
+  // Calculate positions value and cost from positions data
+  const positionsCurrentValue = positions.reduce((sum, pos) => sum + parseFloat(pos.currentValue || "0"), 0);
+  const positionsTotalCost = positions.reduce((sum, pos) => sum + parseFloat(pos.totalCost || "0"), 0);
+  
+  // Total assets = balance + positions current value (持倉當前價值)
+  const totalAssets = balance + positionsCurrentValue;
+  
+  // Calculate unrealized PnL from positions (currentValue - totalCost)
   const unrealizedPnL = positions.reduce((sum, pos) => sum + parseFloat(pos.profitLoss || "0"), 0);
-  const totalCost = positions.reduce((sum, pos) => sum + parseFloat(pos.totalCost || "0"), 0);
-  const unrealizedPnLPercent = totalCost > 0 ? (unrealizedPnL / totalCost) * 100 : 0;
+  const unrealizedPnLPercent = positionsTotalCost > 0 ? (unrealizedPnL / positionsTotalCost) * 100 : 0;
   
   // Get realized PnL from statistics
   const realizedPnL = statistics?.statistics?.profitRate?.total?.profit || 0;
@@ -121,7 +125,7 @@ export function ProfileUI({
   const userData = {
     totalAssets,
     balance,
-    positions: totalPending,
+    positions: positionsTotalCost, // 持倉投入成本總和
     unrealizedPnL,
     unrealizedPnLPercent,
     realizedPnL,

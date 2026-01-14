@@ -32,6 +32,7 @@ interface MarketDetailUIProps {
   onFollow?: () => void;
   isFollowing?: boolean;
   commentId?: string;
+  onCommentsCountChange?: (count: number) => void;
 }
 
 export function MarketDetailUI({
@@ -45,6 +46,7 @@ export function MarketDetailUI({
   onFollow,
   isFollowing = false,
   commentId,
+  onCommentsCountChange,
 }: MarketDetailUIProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -203,7 +205,7 @@ export function MarketDetailUI({
                     height={16}
                     className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0"
                   />
-                  <span className="font-bold text-slate-900">{(market.totalVolume || 0).toLocaleString()}</span>
+                  <span className="font-bold text-slate-900">{(market.totalVolume || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-slate-600">
                   <Users className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
@@ -295,7 +297,12 @@ export function MarketDetailUI({
             {/* Comments Section */}
             <div className="mb-4">
               <MarketDetailClient marketId={market.id}>
-                <CommentsSection marketId={market.id} highlightCommentId={commentId} questionType={market.questionType} />
+                <CommentsSection 
+                  marketId={market.id} 
+                  highlightCommentId={commentId} 
+                  questionType={market.questionType}
+                  onCommentsCountChange={onCommentsCountChange}
+                />
               </MarketDetailClient>
             </div>
 

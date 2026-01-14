@@ -180,6 +180,7 @@ export function MarketDetailUIClient({
       onFollow={handleFollow}
       isFollowing={isFollowing}
       commentId={commentId}
+      onCommentsCountChange={setCommentsCount}
     />
   );
 }
