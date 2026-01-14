@@ -192,33 +192,9 @@ export function QuestsUIClient() {
     try {
       await signInWithGooglePopup(
         async () => {
-          const userData = await getMe();
-          if (userData) {
-            setUser(userData);
-            setIsLoggedIn(true);
-            // Fetch user statistics and unread notifications count after login
-            try {
-              const [stats, unreadCount] = await Promise.all([
-                getUserStatistics(userData.id),
-                getUnreadCount(userData.id).catch((err) => {
-                  console.error('[QuestsUIClient] Failed to load unread notifications count after login:', err);
-                  return 0;
-                }),
-              ]);
-              setUserStatistics(stats);
-              setUnreadNotificationsCount(unreadCount);
-            } catch (err) {
-              console.error('[QuestsUIClient] Failed to load user statistics after login:', err);
-            }
-            // Refresh quests after login
-            await refreshQuests();
-            router.refresh();
-          } else {
-            setIsLoggedIn(false);
-            setUser(null);
-            setUserStatistics(null);
-            setUnreadNotificationsCount(0);
-          }
+          // 登入成功後立即刷新頁面（使用 window.location.reload() 確保完整刷新，特別是在內嵌瀏覽器中）
+          // 這樣可以確保所有組件都重新載入，用戶可以立即使用所有功能
+          window.location.reload();
         },
         (error) => {
           console.error('[QuestsUIClient] Login failed:', error);

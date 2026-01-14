@@ -556,50 +556,9 @@ export function HomePageUIClient({
     try {
       await signInWithGooglePopup(
         async () => {
-          const userData = await getMe();
-          if (userData) {
-            setUser(userData);
-            setIsLoggedIn(true);
-            
-            if (userData.id) {
-              try {
-                // Check if user hasn't used a referral code yet
-                if (!userData.referredBy) {
-                  // Try to apply pending referral code
-                  await applyPendingReferralCode(userData.id);
-                  // Refresh user data after applying referral code
-                  const updatedUser = await getMe();
-                  if (updatedUser) {
-                    setUser(updatedUser);
-                  }
-                }
-
-                const [stats, questsData, unreadCount] = await Promise.all([
-                  getUserStatistics(userData.id),
-                  getQuests(userData.id).catch((err) => {
-                    console.error('[HomePageUIClient] Failed to load quests after login:', err);
-                    return null;
-                  }),
-                  getUnreadCount(userData.id).catch((err) => {
-                    console.error('[HomePageUIClient] Failed to load unread notifications count after login:', err);
-                    return 0;
-                  }),
-                ]);
-                setUserStatistics(stats);
-                setQuests(questsData);
-                setUnreadNotificationsCount(unreadCount);
-              } catch (error) {
-                console.error('[HomePageUIClient] Failed to load user statistics:', error);
-              }
-            }
-            
-            router.refresh();
-          } else {
-            // 登入後獲取用戶數據失敗
-            setIsLoggedIn(false);
-            setUser(null);
-            setUserStatistics(null);
-          }
+          // 登入成功後立即刷新頁面（使用 window.location.reload() 確保完整刷新，特別是在內嵌瀏覽器中）
+          // 這樣可以確保所有組件都重新載入，用戶可以立即使用所有功能（下注、評論等）
+          window.location.reload();
         },
         (error) => {
           console.error('[HomePageUIClient] Login failed:', error);

@@ -237,15 +237,9 @@ export function ProfileUIClient() {
     try {
       await signInWithGooglePopup(
         async () => {
-          const userData = await getMe();
-          if (userData) {
-            setUser(userData);
-            setIsLoggedIn(true);
-            router.refresh();
-          } else {
-            setIsLoggedIn(false);
-            setUser(null);
-          }
+          // 登入成功後立即刷新頁面（使用 window.location.reload() 確保完整刷新，特別是在內嵌瀏覽器中）
+          // 這樣可以確保所有組件都重新載入，用戶可以立即使用所有功能
+          window.location.reload();
         },
         (error) => {
           console.error('[ProfileUIClient] Login failed:', error);

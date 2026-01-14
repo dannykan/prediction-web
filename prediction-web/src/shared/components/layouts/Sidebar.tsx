@@ -450,29 +450,9 @@ export function Sidebar({ isOpen: controlledIsOpen, onToggle }: SidebarProps) {
                   try {
                     await signInWithGooglePopup(
                       async () => {
-                        // Login successful - reload user data and refresh page
-                        try {
-                          const userData = await getMe();
-                          setUser(userData);
-                          
-                          if (userData?.id) {
-                            try {
-                              const stats = await getUserStatistics(userData.id);
-                              if (stats) {
-                                setUserStatistics(stats);
-                              }
-                            } catch (error) {
-                              console.error("[Sidebar] Failed to load user statistics:", error);
-                            }
-                          }
-                          
-                          // Refresh the page to update all components
-                          router.refresh();
-                        } catch (error) {
-                          console.error("[Sidebar] Failed to reload user after login:", error);
-                          // Still refresh the page
-                          router.refresh();
-                        }
+                        // Login successful - reload page to update all components
+                        // Use window.location.reload() to ensure complete refresh, especially in embedded browsers
+                        window.location.reload();
                       },
                       (error) => {
                         alert(`登入失敗: ${error}`);
