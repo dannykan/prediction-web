@@ -84,28 +84,9 @@ export function MarketDetailUIClient({
     try {
       await signInWithGooglePopup(
         async () => {
-          const userData = await getMe();
-          if (userData) {
-            setUser(userData);
-            setIsLoggedIn(true);
-            
-            if (userData.id) {
-              try {
-                const stats = await getUserStatistics(userData.id);
-                setUserStatistics(stats);
-              } catch (error) {
-                console.error('[MarketDetailUIClient] Failed to load user statistics:', error);
-              }
-            }
-            
-            // 登入完成後立即刷新頁面（使用 window.location.reload() 確保完整刷新，特別是在內嵌瀏覽器中）
-            window.location.reload();
-          } else {
-            // 登入後獲取用戶數據失敗
-            setIsLoggedIn(false);
-            setUser(null);
-            setUserStatistics(null);
-          }
+          // 登入成功後立即刷新頁面（使用 window.location.reload() 確保完整刷新，特別是在內嵌瀏覽器中）
+          // 這樣可以確保所有組件都重新載入，用戶可以立即使用所有功能（下注、評論等）
+          window.location.reload();
         },
         (error) => {
           console.error('[MarketDetailUIClient] Login failed:', error);
