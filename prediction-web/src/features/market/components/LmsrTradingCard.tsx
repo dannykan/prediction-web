@@ -1170,8 +1170,11 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                       {/* 標題：選項名稱和方向 */}
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-semibold text-base">{position.optionName}</div>
-                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                          {/* 對於是非題，不顯示 optionName，只顯示圖標 */}
+                          {!isBinary && (
+                            <div className="font-semibold text-base">{position.optionName}</div>
+                          )}
+                          <div className={`text-xs text-gray-500 flex items-center gap-1 ${isBinary ? '' : 'mt-1'}`}>
                             {position.side === 'YES' ? (
                               <Circle className="w-3.5 h-3.5 text-green-600 stroke-[2.5]" />
                             ) : (
