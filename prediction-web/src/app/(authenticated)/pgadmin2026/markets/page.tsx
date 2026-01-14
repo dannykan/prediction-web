@@ -25,7 +25,7 @@ export default function AdminMarketsPage() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("OPEN"); // 預設顯示 Open 的市場
   
   // 分類管理相關狀態
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
@@ -96,6 +96,18 @@ export default function AdminMarketsPage() {
     }
   };
 
+  // 檢查市場是否已過期（超過 closeTime 但狀態仍為 OPEN）
+  // 已過期應該顯示為 LOCKED 狀態
+  const getEffectiveStatus = (market: Market) => {
+    const now = new Date();
+    const closeTime = new Date(market.closeTime);
+    // 如果市場狀態是 OPEN 但已經超過 closeTime，應該視為 LOCKED（已鎖定/已過期）
+    if (market.status === "OPEN" && closeTime < now) {
+      return "LOCKED";
+    }
+    return market.status;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "OPEN":
@@ -106,6 +118,27 @@ export default function AdminMarketsPage() {
         return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusDisplay = (market: Market) => {
+    const effectiveStatus = getEffectiveStatus(market);
+    const now = new Date();
+    const closeTime = new Date(market.closeTime);
+    // 如果實際狀態是 OPEN 但已過期，顯示為「已鎖定 (已過期)」
+    if (market.status === "OPEN" && closeTime < now) {
+      return "已鎖定 (已過期)";
+    }
+    // 其他情況顯示原始狀態
+    switch (market.status) {
+      case "OPEN":
+        return "開放中";
+      case "LOCKED":
+        return "已鎖定";
+      case "SETTLED":
+        return "已結算";
+      default:
+        return market.status;
     }
   };
 
@@ -357,10 +390,10 @@ export default function AdminMarketsPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                        market.status
+                        getEffectiveStatus(market)
                       )}`}
                     >
-                      {market.status}
+                      {getStatusDisplay(market)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
