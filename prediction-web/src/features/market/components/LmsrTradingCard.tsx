@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import NextImage from "next/image";
 import { Circle, X as XIcon } from "lucide-react";
+import { logger } from '@/shared/utils/logger';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -495,7 +496,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
 
   // Debug logging
   useEffect(() => {
-    console.log('[LmsrTradingCard] Market info:', {
+    logger.logWithPrefix('LmsrTradingCard', 'Market info:', {
       marketId,
       questionType,
       isBinary,
@@ -603,7 +604,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
       const user = await getMe();
       setCurrentUser(user);
     } catch (err) {
-      console.error('[LmsrTradingCard] Failed to load user:', err);
+      logger.error('[LmsrTradingCard] Failed to load user:', err);
       setCurrentUser(null);
     } finally {
       setUserLoading(false);
@@ -615,22 +616,22 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
       setPositionsLoading(true);
       if (isSingle) {
         // 單選題使用 exclusive market positions
-        console.log('[LmsrTradingCard] Loading exclusive market positions for single choice');
+        logger.logWithPrefix('LmsrTradingCard', 'Loading exclusive market positions for single choice');
         const data = await getExclusiveMarketPositions(marketId);
-        console.log('[LmsrTradingCard] Exclusive positions loaded:', data.length);
+        logger.logWithPrefix('LmsrTradingCard', 'Exclusive positions loaded:', data.length);
         setExclusivePositions(data);
         setPositions([]); // Clear option market positions
       } else {
         // 其他題型使用 option market positions
-        console.log('[LmsrTradingCard] Loading option market positions for', isBinary ? 'YES_NO' : 'MULTIPLE_CHOICE');
+        logger.logWithPrefix('LmsrTradingCard', 'Loading option market positions for', isBinary ? 'YES_NO' : 'MULTIPLE_CHOICE');
         const data = await getUserPositions(marketId);
-        console.log('[LmsrTradingCard] Option positions loaded:', data.length, data);
+        logger.logWithPrefix('LmsrTradingCard', 'Option positions loaded:', data.length, data);
         setPositions(data);
         setExclusivePositions([]); // Clear exclusive positions
       }
     } catch (err: any) {
       // 靜默處理錯誤，未登入時返回空陣列
-      console.warn('[LmsrTradingCard] Failed to load positions (user may not be logged in):', err.message);
+        logger.warn('[LmsrTradingCard] Failed to load positions (user may not be logged in):', err.message);
       setPositions([]);
       setExclusivePositions([]);
     } finally {
@@ -643,7 +644,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
       setLoading(true);
       setError(null);
       
-      console.log('[LmsrTradingCard] Loading markets:', {
+      logger.logWithPrefix('LmsrTradingCard', 'Loading markets:', {
         marketId,
         isSingle,
         isBinary,
@@ -654,10 +655,10 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
       
       // 單選題使用 exclusive markets，其他（是非題、多選題）使用 option markets
       if (isSingle) {
-        console.log('[LmsrTradingCard] Fetching exclusive market for single choice question');
+        logger.logWithPrefix('LmsrTradingCard', 'Fetching exclusive market for single choice question');
         try {
           const data = await getExclusiveMarketByMarketId(marketId);
-          console.log('[LmsrTradingCard] Exclusive market loaded:', {
+          logger.logWithPrefix('LmsrTradingCard', 'Exclusive market loaded:', {
             exclusiveMarketId: data.exclusiveMarketId,
             outcomesCount: data.outcomes.length,
             outcomes: data.outcomes.map(o => ({
@@ -672,17 +673,17 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
           });
           setExclusiveMarket(data);
         } catch (err: any) {
-          console.error('[LmsrTradingCard] Failed to load exclusive market:', err);
+          logger.error('[LmsrTradingCard] Failed to load exclusive market:', err);
           setExclusiveMarket(null);
           setError(`無法載入單選題市場數據: ${err.message || '未知錯誤'}`);
         }
         // Don't auto-select any outcome - let user choose
       } else {
         // 是非題和多選題都使用 option markets
-        console.log('[LmsrTradingCard] Fetching option markets for', isBinary ? 'YES_NO' : 'MULTIPLE_CHOICE', 'question');
+        logger.logWithPrefix('LmsrTradingCard', 'Fetching option markets for', isBinary ? 'YES_NO' : 'MULTIPLE_CHOICE', 'question');
         try {
           const data = await getOptionMarketsByMarketId(marketId);
-          console.log('[LmsrTradingCard] Option markets loaded:', {
+          logger.logWithPrefix('LmsrTradingCard', 'Option markets loaded:', {
             count: data.length,
             markets: data.map(om => ({
               id: om.id,
@@ -693,7 +694,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
           });
           
           if (data.length === 0) {
-            console.warn('[LmsrTradingCard] No option markets found for market:', marketId);
+            logger.warn('[LmsrTradingCard] No option markets found for market:', marketId);
             setError('此市場尚未初始化 LMSR 選項市場，請聯繫管理員');
           } else {
             setOptionMarkets(data);
@@ -742,7 +743,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
             }
           }
         } catch (err: any) {
-          console.error('[LmsrTradingCard] Failed to load option markets:', err);
+          logger.error('[LmsrTradingCard] Failed to load option markets:', err);
           setOptionMarkets([]);
           setError(`無法載入選項市場數據: ${err.message || '未知錯誤'}`);
         }
@@ -751,7 +752,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
     } catch (err: any) {
       const errorMessage = err.message || "載入失敗";
       setError(errorMessage);
-      console.error('[LmsrTradingCard] Load markets error:', {
+      logger.error('[LmsrTradingCard] Load markets error:', {
         error: errorMessage,
         marketId,
         isSingle,
@@ -841,7 +842,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
           setQuote(result);
         }
       } catch (err: any) {
-        console.error('[LmsrTradingCard] Quote error:', err);
+        logger.error('[LmsrTradingCard] Quote error:', err);
         // Show error but don't block UI
         const errorMessage = err.message || "獲取報價失敗";
         // 如果是衝突錯誤，顯示更友好的提示
@@ -939,7 +940,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
         window.location.reload();
       }
     } catch (err: any) {
-      console.error('[LmsrTradingCard] Close position error:', err);
+      logger.error('[LmsrTradingCard] Close position error:', err);
       alert(err.message || '平倉失敗');
     } finally {
       setClosingPositionId(null);
@@ -988,7 +989,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
       
       // ✅ 單選題使用 exclusive markets
       if (isSingle && exclusiveMarket) {
-        console.log('[LmsrTradingCard] Executing exclusive market trade:', {
+        logger.logWithPrefix('LmsrTradingCard', 'Executing exclusive market trade:', {
           exclusiveMarketId: exclusiveMarket.exclusiveMarketId,
           outcomeId: selectedOutcomeId,
           side: selectedSide,
@@ -1006,7 +1007,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
           },
         );
         
-        console.log('[LmsrTradingCard] Trade result:', {
+        logger.logWithPrefix('LmsrTradingCard', 'Trade result:', {
           priceBefore: result.priceBefore,
           priceAfter: result.priceAfter,
           probBefore: result.probBefore,
@@ -1390,7 +1391,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
               ? currentYesProbability 
               : (parseFloat(yesOptionMarket.priceYes || '0.5') * 100);
             
-            console.log('[LmsrTradingCard] YES_NO market probability:', {
+            logger.logWithPrefix('LmsrTradingCard', 'YES_NO market probability:', {
               marketId,
               optionMarketId: yesOptionMarket.id,
               optionName: yesOptionMarket.optionName,
@@ -1625,7 +1626,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
             
             // Debug: 驗證 price 是否有效
             if (isNaN(price) || price < 0 || price > 100) {
-              console.error('[LmsrTradingCard] Invalid price for outcome:', {
+              logger.error('[LmsrTradingCard] Invalid price for outcome:', {
                 outcomeId: outcome.outcomeId,
                 optionName: outcome.optionName,
                 price: outcome.price,

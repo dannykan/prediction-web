@@ -16,6 +16,7 @@ import { useReferralCodeFromUrl } from '@/features/referrals/hooks/useReferralCo
 import { applyReferralCode } from '@/features/referrals/api/applyReferralCode';
 import type { User } from '@/features/user/types/user';
 import { normalizeMarket } from '@/features/market/api/normalizeMarket';
+import { logger } from '@/shared/utils/logger';
 
 interface HomePageUIClientProps {
   initialMarkets: Market[];
@@ -82,7 +83,7 @@ export function HomePageUIClient({
 
       const result = await applyReferralCode(userId, pendingCode, deviceId);
       if (result.success) {
-        console.log('[HomePageUIClient] Referral code applied successfully:', pendingCode);
+        logger.logWithPrefix('HomePageUIClient', 'Referral code applied successfully:', pendingCode);
         clearPendingReferralCode();
         
         // Create notification for welcome gift pack
@@ -96,17 +97,17 @@ export function HomePageUIClient({
             color: '#FF6B35',
             relatedId: null,
           });
-          console.log('[HomePageUIClient] Welcome gift pack notification created');
+          logger.logWithPrefix('HomePageUIClient', 'Welcome gift pack notification created');
         } catch (notifError) {
-          console.error('[HomePageUIClient] Failed to create welcome gift notification:', notifError);
+          logger.error('[HomePageUIClient] Failed to create welcome gift notification:', notifError);
           // Don't fail the referral code application if notification creation fails
         }
       } else {
-        console.warn('[HomePageUIClient] Failed to apply referral code:', result.message);
+        logger.warn('[HomePageUIClient] Failed to apply referral code:', result.message);
         // Don't clear on error, user might want to try again
       }
     } catch (error) {
-      console.error('[HomePageUIClient] Error applying referral code:', error);
+      logger.error('[HomePageUIClient] Error applying referral code:', error);
       // Don't clear on error
     }
   };
@@ -135,11 +136,11 @@ export function HomePageUIClient({
               const [stats, questsData, unreadCount] = await Promise.all([
                 getUserStatistics(userData.id),
                 getQuests(userData.id).catch((err) => {
-                  console.error('[HomePageUIClient] Failed to load quests:', err);
+                  logger.error('[HomePageUIClient] Failed to load quests:', err);
                   return null;
                 }),
                 getUnreadCount(userData.id).catch((err) => {
-                  console.error('[HomePageUIClient] Failed to load unread notifications count:', err);
+                  logger.error('[HomePageUIClient] Failed to load unread notifications count:', err);
                   return 0;
                 }),
               ]);
@@ -147,7 +148,7 @@ export function HomePageUIClient({
               setQuests(questsData);
               setUnreadNotificationsCount(unreadCount);
             } catch (error) {
-              console.error('[HomePageUIClient] Failed to load user statistics:', error);
+              logger.error('[HomePageUIClient] Failed to load user statistics:', error);
             }
           }
         } else {
@@ -532,10 +533,10 @@ export function HomePageUIClient({
       } catch (error: any) {
         // 忽略 AbortError（請求被取消是正常的）
         if (error?.name === 'AbortError') {
-          console.log('[HomePageUIClient] Request aborted (expected when switching filters quickly)');
+          logger.logWithPrefix('HomePageUIClient', 'Request aborted (expected when switching filters quickly)');
           return;
         }
-        console.error('[HomePageUIClient] Failed to fetch markets:', error);
+        logger.error('[HomePageUIClient] Failed to fetch markets:', error);
         // Keep existing markets on error
       }
     }
@@ -561,14 +562,14 @@ export function HomePageUIClient({
           window.location.reload();
         },
         (error) => {
-          console.error('[HomePageUIClient] Login failed:', error);
+          logger.error('[HomePageUIClient] Login failed:', error);
           setIsLoggedIn(false);
           setUser(null);
           setUserStatistics(null);
         }
       );
     } catch (error) {
-      console.error('[HomePageUIClient] Login error:', error);
+      logger.error('[HomePageUIClient] Login error:', error);
       setIsLoggedIn(false);
       setUser(null);
       setUserStatistics(null);
@@ -592,7 +593,7 @@ export function HomePageUIClient({
         router.refresh();
       }
     } catch (error) {
-      console.error('[HomePageUIClient] Logout error:', error);
+      logger.error('[HomePageUIClient] Logout error:', error);
     }
   };
 

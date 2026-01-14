@@ -14,6 +14,7 @@ import {
   type ExclusiveMarketInfo,
 } from '@/features/market/api/lmsr';
 import { getAllTrades } from '@/features/market/api/getAllTrades';
+import { logger } from '@/shared/utils/logger';
 
 interface MarketCardUIProps {
   market: Market;
@@ -64,20 +65,20 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
                 if (lastTrade.priceYesAfter) {
                   const probability = parseFloat(lastTrade.priceYesAfter) * 100;
                   setYesProbability(probability);
-                  console.log(`[MarketCardUI] Set YES probability from last trade for market ${market.id}:`, probability);
+                  logger.logWithPrefix('MarketCardUI', `Set YES probability from last trade for market ${market.id}:`, probability);
                 } else if (lastTrade.priceAfter) {
                   const probability = parseFloat(lastTrade.priceAfter) * 100;
                   setYesProbability(probability);
-                  console.log(`[MarketCardUI] Set YES probability from last trade (fallback) for market ${market.id}:`, probability);
+                  logger.logWithPrefix('MarketCardUI', `Set YES probability from last trade (fallback) for market ${market.id}:`, probability);
                 } else {
                   // 如果交易記錄沒有 priceYesAfter，使用 option markets 的 priceYes
                   const optionMarkets = await getOptionMarketsByMarketId(market.id);
                   if (optionMarkets && optionMarkets.length > 0) {
                     const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
                     setYesProbability(priceYes);
-                    console.log(`[MarketCardUI] Set YES probability from option market for market ${market.id}:`, priceYes);
+                    logger.logWithPrefix('MarketCardUI', `Set YES probability from option market for market ${market.id}:`, priceYes);
                   } else {
-                    console.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
+                    logger.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
                   }
                 }
               } else {
@@ -86,9 +87,9 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
                 if (optionMarkets && optionMarkets.length > 0) {
                   const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
                   setYesProbability(priceYes);
-                  console.log(`[MarketCardUI] No trades found, using option market priceYes for market ${market.id}:`, priceYes);
+                  logger.logWithPrefix('MarketCardUI', `No trades found, using option market priceYes for market ${market.id}:`, priceYes);
                 } else {
-                  console.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
+                  logger.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
                 }
               }
             } catch (error) {
