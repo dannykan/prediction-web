@@ -206,22 +206,39 @@ export default function AdminUserDetailPage() {
       {activeTab === "activity" && (
         <div className="space-y-4">
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-4">下注記錄</h3>
+            <h3 className="text-lg font-semibold mb-4">交易記錄 (LMSR)</h3>
             {activity?.bets && activity.bets.length > 0 ? (
               <div className="space-y-2">
-                {activity.bets.slice(0, 10).map((bet: any) => (
-                  <div key={bet.id} className="border-b pb-2">
-                    <div className="flex justify-between">
-                      <span>下注 {bet.stakeAmount} 到 {bet.selectionId}</span>
-                      <span className="text-sm text-gray-500">
-                        {new Date(bet.createdAt).toLocaleString("zh-TW")}
-                      </span>
+                {activity.bets.slice(0, 10).map((trade: any) => {
+                  // Handle both old Bet format and new Trade format
+                  const isOldFormat = trade.stakeAmount !== undefined;
+                  const optionName = trade.optionName || trade.selectionId || 'N/A';
+                  const amount = isOldFormat 
+                    ? trade.stakeAmount 
+                    : parseFloat(trade.totalCost || trade.grossAmount || '0');
+                  const side = trade.side || (trade.isBuy ? 'BUY' : 'SELL');
+                  
+                  return (
+                    <div key={trade.id} className="border-b pb-2">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="font-medium">
+                            {isOldFormat 
+                              ? `下注 ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 到 ${optionName}`
+                              : `${side.includes('BUY') ? '買入' : '賣出'} ${optionName} - ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} G coin`
+                            }
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {new Date(trade.createdAt).toLocaleString("zh-TW")}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-gray-500">沒有下注記錄</p>
+              <p className="text-gray-500">沒有交易記錄</p>
             )}
           </div>
           <div className="bg-white rounded-lg shadow-md p-6">
