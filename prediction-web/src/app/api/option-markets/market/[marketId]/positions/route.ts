@@ -55,6 +55,10 @@ export async function GET(
     }
 
     const data = await response.json();
+    console.log(`[API /option-markets/market/positions] Market ${marketId} positions:`, {
+      count: Array.isArray(data) ? data.length : 'not an array',
+      data: Array.isArray(data) && data.length > 0 ? data.slice(0, 2) : data, // Log first 2 items
+    });
     return NextResponse.json(data);
   } catch (error) {
     console.error("[API /option-markets/market/:marketId/positions] Error:", error);
