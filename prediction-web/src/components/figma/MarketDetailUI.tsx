@@ -295,7 +295,7 @@ export function MarketDetailUI({
             {/* Comments Section */}
             <div className="mb-4">
               <MarketDetailClient marketId={market.id}>
-                <CommentsSection marketId={market.id} highlightCommentId={commentId} />
+                <CommentsSection marketId={market.id} highlightCommentId={commentId} questionType={market.questionType} />
               </MarketDetailClient>
             </div>
 

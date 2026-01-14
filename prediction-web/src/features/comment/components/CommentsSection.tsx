@@ -17,9 +17,10 @@ interface CommentsSectionProps {
   userId?: string;
   loading?: boolean;
   highlightCommentId?: string; // Comment ID to scroll to and highlight
+  questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE'; // Market question type
 }
 
-export function CommentsSection({ marketId, userId, highlightCommentId }: CommentsSectionProps) {
+export function CommentsSection({ marketId, userId, highlightCommentId, questionType }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -292,7 +293,8 @@ export function CommentsSection({ marketId, userId, highlightCommentId }: Commen
                       {comment.userBet && (
                         <div className="flex items-center gap-1 px-2 py-0.5 bg-indigo-50 rounded text-xs">
                           <span className="text-slate-600">押注</span>
-                          {comment.userBet.optionName && (
+                          {/* 對於是非題，不顯示 optionName（是/否），只顯示圖標 */}
+                          {comment.userBet.optionName && questionType !== 'YES_NO' && (
                             <span className="font-medium text-slate-700">{comment.userBet.optionName}</span>
                           )}
                           <span className={comment.userBet.side === 'YES' ? 'text-green-600' : 'text-red-600'}>

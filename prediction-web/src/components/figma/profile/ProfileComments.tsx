@@ -73,23 +73,30 @@ export function ProfileComments({ comments }: ProfileCommentsProps) {
               </h4>
 
               {/* Bet Info */}
-              {userBet && (
-                <div className="flex items-center gap-1 mb-2 px-2 py-1 bg-indigo-50 rounded text-xs w-fit">
-                  <span className="text-slate-600">押注</span>
-                  {userBet.optionName && (
-                    <span className="font-medium text-slate-700">{userBet.optionName}</span>
-                  )}
-                  <BetIcon direction={userBet.direction === 'YES' ? 'yes' : 'no'} size="sm" />
-                  <Image
-                    src="/images/G_coin_icon.png"
-                    alt="G coin"
-                    width={12}
-                    height={12}
-                    className="w-3 h-3 ml-0.5"
-                  />
-                  <span className="font-bold text-indigo-700">{Math.abs(parseFloat(userBet.stakeAmount || "0")).toLocaleString()}</span>
-                </div>
-              )}
+              {userBet && (() => {
+                // 檢查市場是否為是非題類型
+                const marketQuestionType = (comment.market as any)?.questionType;
+                const isYesNoMarket = marketQuestionType === 'YES_NO';
+                
+                return (
+                  <div className="flex items-center gap-1 mb-2 px-2 py-1 bg-indigo-50 rounded text-xs w-fit">
+                    <span className="text-slate-600">押注</span>
+                    {/* 對於是非題，不顯示 optionName（是/否），只顯示圖標 */}
+                    {userBet.optionName && !isYesNoMarket && (
+                      <span className="font-medium text-slate-700">{userBet.optionName}</span>
+                    )}
+                    <BetIcon direction={userBet.direction === 'YES' ? 'yes' : 'no'} size="sm" />
+                    <Image
+                      src="/images/G_coin_icon.png"
+                      alt="G coin"
+                      width={12}
+                      height={12}
+                      className="w-3 h-3 ml-0.5"
+                    />
+                    <span className="font-bold text-indigo-700">{Math.abs(parseFloat(userBet.stakeAmount || "0")).toLocaleString()}</span>
+                  </div>
+                );
+              })()}
 
               {/* Comment Content */}
               <p className="text-sm text-slate-700 leading-relaxed mb-3 line-clamp-3">
