@@ -17,7 +17,9 @@ export const metadata: Metadata = {
   title: "神預測 Prediction God",
   description: "預測市場平台 - 預測未來，贏得獎勵",
   icons: {
-    icon: "/images/logo.png",
+    icon: [
+      { url: "/images/logo.png", type: "image/png" },
+    ],
     shortcut: "/images/logo.png",
     apple: "/images/logo.png",
   },
