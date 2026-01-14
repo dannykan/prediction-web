@@ -55,19 +55,27 @@ export function LeaderboardUI({
         </span>
       );
     } else if (leaderboardType === 'profit_amount') {
+      // 鯨魚榜：顯示賽季已實現盈虧（G coin數量）
       const pnl = entry.pnl ?? 0;
+      const isPositive = pnl >= 0;
       return (
         <div className="flex items-center gap-1">
           <GCoinIcon size={16} />
-          <span className="text-green-600">+{Math.abs(pnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
+            {isPositive ? '+' : ''}{pnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
         </div>
       );
     } else {
-      const loss = entry.loss ?? entry.totalLosses ?? 0;
+      // 衰人榜：顯示賽季已實現盈虧（G coin數量，可能是負數）
+      const pnl = entry.pnl ?? 0;
+      const isPositive = pnl >= 0;
       return (
         <div className="flex items-center gap-1">
           <GCoinIcon size={16} />
-          <span className="text-red-600">-{Math.abs(loss).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
+            {isPositive ? '+' : ''}{pnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
         </div>
       );
     }
