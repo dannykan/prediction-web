@@ -27,9 +27,13 @@ export async function getMe(): Promise<User | null> {
         if (!isRefreshing) {
           isRefreshing = true;
           try {
-            console.log("[getMe] Token expired, attempting silent sign-in refresh...");
+            if (process.env.NODE_ENV === 'development') {
+              console.log("[getMe] Token expired, attempting silent sign-in refresh...");
+            }
             await signInWithGoogleSilent();
-            console.log("[getMe] Silent sign-in successful, retrying getMe...");
+            if (process.env.NODE_ENV === 'development') {
+              console.log("[getMe] Silent sign-in successful, retrying getMe...");
+            }
             
             // Retry getMe after successful refresh
             const retryResponse = await fetch("/api/me", {
@@ -46,7 +50,11 @@ export async function getMe(): Promise<User | null> {
               return data.user || data;
             }
           } catch (refreshError) {
-            console.warn("[getMe] Silent sign-in refresh failed:", refreshError);
+            // Silent refresh failed - this is expected if user is not signed in to Google
+            // Only log in development to avoid console noise
+            if (process.env.NODE_ENV === 'development') {
+              console.log("[getMe] Silent sign-in refresh not available (user may need to manually login):", refreshError);
+            }
             // Silent refresh failed, user will need to manually login
           } finally {
             isRefreshing = false;

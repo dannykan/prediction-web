@@ -60,51 +60,72 @@ export async function initializeGoogleSignIn(enableOneTap: boolean = false): Pro
 
   // If One Tap is enabled, initialize it for automatic sign-in
   if (enableOneTap) {
-    window.google!.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: async (response: { credential: string }) => {
-        try {
-          console.log("[GoogleSignIn] One Tap automatic sign-in: Google ID Token received");
-          
-          // Send ID token to backend via BFF
-          const loginResponse = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify({
-              idToken: response.credential,
-            }),
-          });
-
-          if (loginResponse.ok) {
-            const data = await loginResponse.json();
-            console.log("[GoogleSignIn] One Tap automatic sign-in successful:", {
-              userId: data.user?.id,
-              email: data.user?.email,
+    try {
+      window.google!.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response: { credential: string }) => {
+          try {
+            console.log("[GoogleSignIn] One Tap automatic sign-in: Google ID Token received");
+            
+            // Send ID token to backend via BFF
+            const loginResponse = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify({
+                idToken: response.credential,
+              }),
             });
-            // Trigger page refresh to update UI with new login state
-            if (typeof window !== 'undefined') {
-              window.location.reload();
-            }
-          } else {
-            console.warn("[GoogleSignIn] One Tap automatic sign-in failed:", await loginResponse.json());
-          }
-        } catch (error) {
-          console.error("[GoogleSignIn] One Tap automatic sign-in error:", error);
-        }
-      },
-      auto_select: true, // Enable automatic sign-in
-      ux_mode: "popup",
-    });
 
-    // Trigger One Tap prompt
-    window.google!.accounts.id.prompt((notification) => {
-      if (notification.isNotDisplayed || notification.isSkippedMoment || notification.isDismissedMoment) {
-        console.log("[GoogleSignIn] One Tap not displayed on page load:", notification.reason);
+            if (loginResponse.ok) {
+              const data = await loginResponse.json();
+              console.log("[GoogleSignIn] One Tap automatic sign-in successful:", {
+                userId: data.user?.id,
+                email: data.user?.email,
+              });
+              // Trigger page refresh to update UI with new login state
+              if (typeof window !== 'undefined') {
+                window.location.reload();
+              }
+            } else {
+              const errorData = await loginResponse.json().catch(() => ({}));
+              console.warn("[GoogleSignIn] One Tap automatic sign-in failed:", errorData);
+            }
+          } catch (error) {
+            console.warn("[GoogleSignIn] One Tap automatic sign-in error:", error);
+            // Don't throw, just log - this is a background operation
+          }
+        },
+        auto_select: true, // Enable automatic sign-in
+        ux_mode: "popup",
+      });
+
+      // Trigger One Tap prompt with error handling
+      try {
+        window.google!.accounts.id.prompt((notification) => {
+          // Only log if there's a specific reason (not just "not displayed")
+          if (notification.isNotDisplayed || notification.isSkippedMoment || notification.isDismissedMoment) {
+            // Only log in development, and only if there's a meaningful reason
+            if (process.env.NODE_ENV === 'development' && notification.reason) {
+              console.log("[GoogleSignIn] One Tap not displayed:", notification.reason);
+            }
+          }
+        });
+      } catch (promptError) {
+        // FedCM errors are expected in some browsers/settings, don't log as error
+        if (process.env.NODE_ENV === 'development') {
+          console.log("[GoogleSignIn] One Tap prompt error (expected in some browsers):", promptError);
+        }
       }
-    });
+    } catch (initError) {
+      // FedCM or other initialization errors are expected in some cases
+      // Don't log as error, just silently fail - user can still use manual login
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[GoogleSignIn] One Tap initialization error (expected in some browsers):", initError);
+      }
+    }
   }
 }
 
