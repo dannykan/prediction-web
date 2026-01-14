@@ -6,7 +6,10 @@ import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 
 const COOKIE_NAME = "pg_token";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+// 延長 Cookie 過期時間到 90 天，讓用戶登入狀態保持更久
+// 注意：Google ID Token 本身只有 1 小時有效期，但 Cookie 會保存更久
+// 當 token 過期時，用戶需要重新登入，但 Cookie 會保留，減少重新輸入的次數
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 90; // 90 days
 
 /**
  * Get authentication token from cookie
