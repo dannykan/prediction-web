@@ -160,8 +160,17 @@ export function TradeHistorySection({ marketId, isSingle, questionType: rawQuest
   }, [marketId, isSingle, userId]);
 
   // Separate active positions (shares > 0) from all positions
+  // Filter by current user if userId is provided (for "我的持倉" section)
   const activePositions = allPositions.filter(
-    (p) => parseFloat(p.shares || '0') > 0
+    (p) => {
+      const hasShares = parseFloat(p.shares || '0') > 0;
+      // If userId is provided, only show current user's positions (我的持倉)
+      if (userId) {
+        return hasShares && p.userId === userId;
+      }
+      // Otherwise show all positions (for guest view or all users view)
+      return hasShares;
+    }
   );
 
   if (loading) {
@@ -204,7 +213,7 @@ export function TradeHistorySection({ marketId, isSingle, questionType: rawQuest
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          當前持倉
+          {userId ? '我的持倉' : '當前持倉'}
         </button>
         <button
           onClick={() => setActiveTab('trades')}
