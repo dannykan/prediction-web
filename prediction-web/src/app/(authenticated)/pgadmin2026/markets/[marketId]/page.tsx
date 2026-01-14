@@ -4,19 +4,43 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-interface Bet {
+// LMSR Trade record (replaces old Bet structure)
+interface Trade {
   id: string;
   userId: string;
-  selectionId: string;
-  stakeAmount: number;
-  potentialWin: number;
-  status: string;
   user: {
     id: string;
     displayName: string;
-    email: string;
+    email?: string;
+    avatarUrl?: string | null;
   };
-  createdAt: string;
+  // For YES_NO/MULTIPLE_CHOICE (OptionMarket)
+  optionMarketId?: string;
+  optionId?: string | null;
+  optionName?: string;
+  // For SINGLE_CHOICE (ExclusiveMarket)
+  outcomeId?: string;
+  // Common fields
+  side: string; // 'BUY_YES', 'BUY_NO', 'SELL_YES', 'SELL_NO', 'BUY', 'SELL'
+  isBuy: boolean;
+  shares: string;
+  grossAmount: string;
+  feeAmount: string;
+  netAmount: string;
+  totalCost: string;
+  // Price fields (YES_NO/MULTIPLE_CHOICE)
+  priceYesBefore?: string;
+  priceYesAfter?: string;
+  // Price fields (SINGLE_CHOICE)
+  priceBefore?: string;
+  priceAfter?: string;
+  allPricesAfter?: Array<{
+    outcomeId: string;
+    optionId: string | null;
+    price: string;
+    optionName?: string | null;
+  }>;
+  createdAt: string | Date;
 }
 
 interface Comment {
@@ -47,7 +71,7 @@ export default function AdminMarketDetailPage({
   const router = useRouter();
   const [marketId, setMarketId] = useState<string>("");
   const [market, setMarket] = useState<Market | null>(null);
-  const [bets, setBets] = useState<Bet[]>([]);
+  const [trades, setTrades] = useState<Trade[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"bets" | "comments">("bets");
@@ -96,18 +120,24 @@ export default function AdminMarketDetailPage({
 
       if (betsRes.status === "fulfilled" && betsRes.value.ok) {
         try {
-          const betsData = await betsRes.value.json();
-          if (Array.isArray(betsData)) {
-            setBets(betsData);
-          } else if (betsData && Array.isArray(betsData.bets)) {
-            setBets(betsData.bets);
+          const tradesData = await betsRes.value.json();
+          if (Array.isArray(tradesData)) {
+            setTrades(tradesData);
+          } else if (tradesData && Array.isArray(tradesData.trades)) {
+            setTrades(tradesData.trades);
+          } else if (tradesData && Array.isArray(tradesData.bets)) {
+            // Fallback for old format
+            setTrades(tradesData.bets);
+          } else {
+            setTrades([]);
           }
         } catch (err) {
-          console.error("Error parsing bets data:", err);
+          console.error("Error parsing trades data:", err);
+          setTrades([]);
         }
       } else {
-        console.warn("Bets API not available or failed:", betsRes.status === "rejected" ? betsRes.reason : betsRes.value.status);
-        setBets([]);
+        console.warn("Trades API not available or failed:", betsRes.status === "rejected" ? betsRes.reason : betsRes.value.status);
+        setTrades([]);
       }
 
       if (commentsRes.status === "fulfilled" && commentsRes.value.ok) {
@@ -135,41 +165,12 @@ export default function AdminMarketDetailPage({
     }
   };
 
-  const handleDeleteBet = async (betId: string) => {
-    if (!deleteReason.trim()) {
-      alert("請輸入刪除原因");
-      return;
-    }
-
-    try {
-      // TODO: Get adminId from auth context
-      const adminId = "admin-user-id"; // Replace with actual admin ID
-      
-      const response = await fetch(`/api/admin/bets/${betId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          adminId,
-          reason: deleteReason,
-        }),
-      });
-
-      if (response.ok) {
-        alert("下注已刪除並退款");
-        setShowDeleteModal(null);
-        setDeleteReason("");
-        fetchData();
-      } else {
-        const error = await response.json();
-        alert(`刪除失敗: ${error.message || "Unknown error"}`);
-      }
-    } catch (err) {
-      console.error("Error deleting bet:", err);
-      alert("刪除失敗");
-    }
+  const handleDeleteTrade = async (tradeId: string) => {
+    // Note: LMSR trades cannot be deleted like old bets
+    // This functionality may not be available for LMSR trades
+    alert("LMSR 交易記錄無法刪除。如需處理問題交易，請聯繫技術團隊。");
+    setShowDeleteModal(null);
+    setDeleteReason("");
   };
 
   const handleDeleteComment = async (commentId: string) => {
@@ -341,7 +342,7 @@ export default function AdminMarketDetailPage({
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
-            下注記錄 ({bets.length})
+            交易記錄 ({trades.length})
           </button>
           <button
             onClick={() => setActiveTab("comments")}
@@ -368,55 +369,97 @@ export default function AdminMarketDetailPage({
                   用戶
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  選擇
+                  選項
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  下注金額
+                  方向
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  潛在收益
+                  數量
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  狀態
+                  總成本
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  操作
+                  淨金額
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  時間
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {bets.map((bet) => (
-                <tr key={bet.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {bet.user.displayName}
-                    </div>
-                    <div className="text-sm text-gray-500">{bet.user.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {bet.selectionId}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {bet.stakeAmount.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {bet.potentialWin.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                      {bet.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => setShowDeleteModal(bet.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      刪除
-                    </button>
+              {trades.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                    暫無交易記錄
                   </td>
                 </tr>
-              ))}
+              ) : (
+                trades.map((trade) => {
+                  // Format side display
+                  const getSideDisplay = (side: string, isBuy: boolean) => {
+                    if (side === 'BUY_YES' || (side === 'BUY' && isBuy)) {
+                      return market?.questionType === 'YES_NO' ? '〇 買入' : '買入';
+                    } else if (side === 'BUY_NO') {
+                      return '✕ 買入';
+                    } else if (side === 'SELL_YES' || (side === 'SELL' && !isBuy)) {
+                      return market?.questionType === 'YES_NO' ? '〇 賣出' : '賣出';
+                    } else if (side === 'SELL_NO') {
+                      return '✕ 賣出';
+                    }
+                    return side;
+                  };
+
+                  // Get option name
+                  const optionName = trade.optionName || 'N/A';
+                  
+                  // Format numbers
+                  const shares = parseFloat(trade.shares || '0');
+                  const totalCost = parseFloat(trade.totalCost || '0');
+                  const netAmount = parseFloat(trade.netAmount || '0');
+
+                  return (
+                    <tr key={trade.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {trade.user?.displayName || 'Unknown'}
+                        </div>
+                        {trade.user?.email && (
+                          <div className="text-sm text-gray-500">{trade.user.email}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {optionName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          trade.isBuy 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {getSideDisplay(trade.side, trade.isBuy)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {shares.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                        netAmount >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {netAmount >= 0 ? '+' : ''}
+                        {netAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(trade.createdAt).toLocaleString('zh-TW')}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
           </div>
@@ -486,14 +529,14 @@ export default function AdminMarketDetailPage({
               <button
                 onClick={() => {
                   if (activeTab === "bets") {
-                    handleDeleteBet(showDeleteModal);
+                    handleDeleteTrade(showDeleteModal);
                   } else {
                     handleDeleteComment(showDeleteModal);
                   }
                 }}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
-                確認刪除
+                {activeTab === "bets" ? "確認（LMSR 交易無法刪除）" : "確認刪除"}
               </button>
             </div>
           </div>
