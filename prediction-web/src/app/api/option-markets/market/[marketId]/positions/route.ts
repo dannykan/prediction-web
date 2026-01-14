@@ -21,8 +21,8 @@ export async function GET(
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    // Try the correct backend path: /option-markets/market/:marketId/positions
-    const backendUrl = `${getApiBaseUrl()}/option-markets/market/${encodeURIComponent(marketId)}/positions`;
+    // Backend path: /option-markets/:marketId/positions (not /option-markets/market/:marketId/positions)
+    const backendUrl = `${getApiBaseUrl()}/option-markets/${encodeURIComponent(marketId)}/positions`;
     
     const response = await fetch(backendUrl, {
       method: "GET",
