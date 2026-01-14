@@ -224,7 +224,11 @@ export default function AdminMarketDetailPage({
       return;
     }
 
-    if (!confirm("確定要結算這個市場嗎？此操作無法撤銷。")) {
+    const confirmMessage = market.status === "SETTLED"
+      ? "確定要重新結算這個市場嗎？這將覆蓋之前的結算結果。"
+      : "確定要結算這個市場嗎？此操作無法撤銷。";
+    
+    if (!confirm(confirmMessage)) {
       return;
     }
 
@@ -311,12 +315,16 @@ export default function AdminMarketDetailPage({
               </p>
             )}
           </div>
-          {market && market.status !== "SETTLED" && (
+          {market && (
             <button
               onClick={() => setShowSettleModal(true)}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              className={`px-6 py-2 rounded-lg hover:opacity-90 disabled:opacity-50 ${
+                market.status === "SETTLED"
+                  ? "bg-orange-600 text-white hover:bg-orange-700"
+                  : "bg-green-600 text-white hover:bg-green-700"
+              }`}
             >
-              結算市場
+              {market.status === "SETTLED" ? "重新結算市場" : "結算市場"}
             </button>
           )}
         </div>
