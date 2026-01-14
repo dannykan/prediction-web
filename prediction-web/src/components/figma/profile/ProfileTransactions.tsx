@@ -57,6 +57,27 @@ const formatTransactionType = (transaction: Transaction): { action: string; titl
     return { action: lmsrInfo.action };
   }
   
+  // 處理 BET_WIN 類型：解析描述以提取市場標題和選項名稱
+  if (transaction.type === "BET_WIN") {
+    const description = transaction.description || "";
+    // 描述格式：市場結算獲勝: [市場標題] - [選項名稱] (持有 X shares)
+    const match = description.match(/市場結算獲勝:\s*(.+?)\s*-\s*(.+?)\s*\(/);
+    if (match) {
+      const marketTitle = match[1].trim();
+      const optionNames = match[2].trim();
+      // 如果有多個選項（逗號分隔），只取第一個
+      const firstOptionName = optionNames.split(',')[0].trim();
+      
+      return {
+        action: "投注獲勝",
+        title: marketTitle,
+        optionName: firstOptionName,
+      };
+    }
+    // 如果解析失敗，返回基本格式
+    return { action: "投注獲勝" };
+  }
+  
   const typeMap: Record<string, string> = {
     BET_STAKE: "投注扣款",
     BET_WIN: "投注獲勝",
@@ -168,12 +189,33 @@ const formatTransactionTime = (createdAt: string): string => {
 };
 
 const getBetIcon = (transaction: Transaction) => {
-  if (!transaction.marketInfo) return null;
-  const side = transaction.marketInfo.side;
-  if (side === 'YES') {
-    return <Circle className="w-3 h-3 text-green-600" />;
-  } else if (side === 'NO') {
-    return <XIcon className="w-3 h-3 text-red-600" />;
+  // 對於 BET_WIN，從 optionName 判斷是 YES 還是 NO
+  if (transaction.type === "BET_WIN") {
+    const optionName = transaction.marketInfo?.optionName || 
+                       (transaction.description?.match(/-\s*(.+?)\s*\(/) || [])[1] || "";
+    const optionNameLower = optionName.toLowerCase().trim();
+    
+    // 判斷選項是 YES 還是 NO
+    if (optionNameLower === 'yes' || optionNameLower === '是' || optionNameLower === '會' || 
+        optionNameLower.includes('yes') || optionNameLower.includes('是')) {
+      return <Circle className="w-3 h-3 text-green-600" />;
+    } else if (optionNameLower === 'no' || optionNameLower === '否' || optionNameLower === '不會' ||
+               optionNameLower.includes('no') || optionNameLower.includes('否')) {
+      return <XIcon className="w-3 h-3 text-red-600" />;
+    }
+    // 對於單選/多選題，如果選項名稱不是 Yes/No，不顯示圖標（或可以根據市場類型判斷）
+    // 暫時返回 null，如果需要可以根據 marketInfo.questionType 判斷
+    return null;
+  }
+  
+  // 對於 LMSR Trade，使用 marketInfo.side
+  if (transaction.marketInfo) {
+    const side = transaction.marketInfo.side;
+    if (side === 'YES') {
+      return <Circle className="w-3 h-3 text-green-600" />;
+    } else if (side === 'NO') {
+      return <XIcon className="w-3 h-3 text-red-600" />;
+    }
   }
   return null;
 };
