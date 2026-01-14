@@ -1,9 +1,14 @@
 /**
  * Get current user (me)
  * Calls BFF /api/me
+ * If token expired (401), automatically tries to refresh using silent sign-in
  */
 
 import type { User } from "../types/user";
+import { signInWithGoogleSilent } from "@/core/auth/googleSignIn";
+
+// Track if we're currently refreshing to avoid infinite loops
+let isRefreshing = false;
 
 export async function getMe(): Promise<User | null> {
   try {
@@ -18,6 +23,35 @@ export async function getMe(): Promise<User | null> {
 
     if (!response.ok) {
       if (response.status === 401) {
+        // Token expired, try to refresh using silent sign-in
+        if (!isRefreshing) {
+          isRefreshing = true;
+          try {
+            console.log("[getMe] Token expired, attempting silent sign-in refresh...");
+            await signInWithGoogleSilent();
+            console.log("[getMe] Silent sign-in successful, retrying getMe...");
+            
+            // Retry getMe after successful refresh
+            const retryResponse = await fetch("/api/me", {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              cache: "no-store",
+            });
+
+            if (retryResponse.ok) {
+              const data = await retryResponse.json();
+              isRefreshing = false;
+              return data.user || data;
+            }
+          } catch (refreshError) {
+            console.warn("[getMe] Silent sign-in refresh failed:", refreshError);
+            // Silent refresh failed, user will need to manually login
+          } finally {
+            isRefreshing = false;
+          }
+        }
         return null; // Not authenticated
       }
       throw new Error(`Failed to fetch current user: ${response.statusText}`);

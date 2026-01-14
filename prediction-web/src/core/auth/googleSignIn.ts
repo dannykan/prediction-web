@@ -12,8 +12,10 @@ declare global {
             client_id: string;
             callback: (response: { credential: string }) => void;
             ux_mode?: "popup" | "redirect";
+            auto_select?: boolean; // Enable automatic sign-in
+            cancel_on_tap_outside?: boolean;
           }) => void;
-          prompt: () => void;
+          prompt: (momentNotification?: (notification: { isNotDisplayed: boolean; isSkippedMoment: boolean; isDismissedMoment: boolean; reason: string }) => void) => void;
           renderButton: (
             element: HTMLElement,
             config: {
@@ -26,6 +28,7 @@ declare global {
               locale?: string;
             },
           ) => void;
+          disableAutoSelect: () => void;
         };
       };
     };
@@ -52,6 +55,99 @@ export async function initializeGoogleSignIn(): Promise<void> {
       script.onerror = () => reject(new Error("Failed to load Google Identity Services"));
       document.head.appendChild(script);
     });
+  }
+}
+
+/**
+ * Silent sign-in with Google (automatic, no popup)
+ * Uses One Tap to automatically sign in if user has previously authorized
+ * @param onSuccess - Callback when login succeeds
+ * @param onError - Callback when login fails
+ */
+export async function signInWithGoogleSilent(
+  onSuccess?: () => void,
+  onError?: (error: string) => void,
+): Promise<void> {
+  try {
+    await initializeGoogleSignIn();
+
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!googleClientId) {
+      throw new Error("NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set");
+    }
+
+    return new Promise((resolve, reject) => {
+      let callbackExecuted = false;
+
+      window.google!.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response: { credential: string }) => {
+          if (callbackExecuted) return; // Prevent duplicate calls
+          callbackExecuted = true;
+
+          try {
+            console.log("[GoogleSignIn] Silent sign-in: Google ID Token received");
+            
+            // Send ID token to backend via BFF
+            const loginResponse = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify({
+                idToken: response.credential,
+              }),
+            });
+
+            if (!loginResponse.ok) {
+              const error = await loginResponse.json();
+              console.error("[GoogleSignIn] Silent login failed:", error);
+              const errorMessage = error.error || "未知錯誤";
+              onError?.(errorMessage);
+              reject(new Error(errorMessage));
+              return;
+            }
+
+            const data = await loginResponse.json();
+            console.log("[GoogleSignIn] Silent login successful:", {
+              userId: data.user?.id,
+              email: data.user?.email,
+              isNewUser: data.isNewUser,
+            });
+
+            onSuccess?.();
+            resolve();
+          } catch (error) {
+            console.error("[GoogleSignIn] Silent login error:", error);
+            const errorMessage = error instanceof Error ? error.message : "未知錯誤";
+            onError?.(errorMessage);
+            reject(error);
+          }
+        },
+        auto_select: true, // Enable automatic sign-in
+        ux_mode: "popup",
+      });
+
+      // Trigger One Tap prompt (silent, automatic)
+      window.google!.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed || notification.isSkippedMoment || notification.isDismissedMoment) {
+          // One Tap was not displayed (user not signed in to Google, or dismissed)
+          console.log("[GoogleSignIn] One Tap not displayed:", notification.reason);
+          // Don't reject, just silently fail - user can use manual login
+          if (!callbackExecuted) {
+            const errorMsg = "自動登入不可用，請使用手動登入";
+            onError?.(errorMsg);
+            reject(new Error(errorMsg));
+          }
+        }
+      });
+    });
+  } catch (error) {
+    console.error("[GoogleSignIn] Failed to initialize silent sign-in:", error);
+    const errorMessage = error instanceof Error ? error.message : "登入失敗";
+    onError?.(errorMessage);
+    throw error;
   }
 }
 
