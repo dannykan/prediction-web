@@ -74,10 +74,32 @@ export default function BotsManagementPage() {
       ]);
 
       console.log("Loaded data:", { botsData, statsData, groupsData, configData });
+      console.log("Response statuses:", {
+        botsStatus: botsRes.status,
+        statsStatus: statsRes.status,
+        groupsStatus: groupsRes.status,
+        configStatus: configRes.status,
+      });
+
+      // 檢查是否所有API都返回404（表示後端尚未部署）
+      const allNotFound =
+        botsRes.status === 404 &&
+        statsRes.status === 404 &&
+        groupsRes.status === 404 &&
+        configRes.status === 404;
+
+      if (allNotFound) {
+        console.error("❌ 後端API尚未部署或正在部署中");
+        alert(
+          "機器人系統後端API尚未部署完成\n\n" +
+          "請等待3-5分鐘讓Railway完成部署，然後重新整理頁面。\n\n" +
+          "如果問題持續，請聯繫管理員。"
+        );
+      }
 
       // 確保數據格式正確
       setBots(Array.isArray(botsData) ? botsData : []);
-      setStats(statsData || null);
+      setStats(statsData && !statsData.error && !statsData.message ? statsData : null);
       setGroups(Array.isArray(groupsData) ? groupsData : []);
       setGlobalPause(configData?.globalPause || false);
     } catch (error) {
