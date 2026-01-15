@@ -67,24 +67,24 @@ function normalizeOptionName(optionName: string, questionType?: 'YES_NO' | 'SING
 }
 
 // Helper function to parse UTC time string to Date
-function parseUTCTime(utcTimeString: string | Date): Date {
-  if (utcTimeString instanceof Date) {
-    return utcTimeString;
+function parseTimeString(timeValue: string | Date): Date {
+  if (timeValue instanceof Date) {
+    return timeValue;
   }
-  
-  let utcString = String(utcTimeString).trim();
-  
-  // If it doesn't end with 'Z' and doesn't have timezone offset, add 'Z' to indicate UTC
-  if (!utcString.endsWith('Z') && !utcString.match(/[+-]\d{2}:?\d{2}$/)) {
-    utcString = utcString.replace(/[+-]\d{2}:?\d{2}$/, '');
-    if (utcString.includes('T')) {
-      utcString = `${utcString}Z`;
-    } else {
-      utcString = `${utcString}T00:00:00Z`;
-    }
+
+  const raw = String(timeValue).trim();
+  const hasTimezone = raw.endsWith('Z') || raw.match(/[+-]\d{2}:?\d{2}$/);
+
+  if (hasTimezone) {
+    return new Date(raw);
   }
-  
-  return new Date(utcString);
+
+  // If backend returns a naive timestamp, treat it as local time.
+  if (raw.includes('T')) {
+    return new Date(raw);
+  }
+
+  return new Date(`${raw}T00:00:00`);
 }
 
 // BetIcon component - inline helper
@@ -106,6 +106,8 @@ export function TradeHistorySection({ marketId, isSingle, questionType: rawQuest
   const [allPositions, setAllPositions] = useState<AllPosition[]>([]);
   const [allTrades, setAllTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [positionsVisibleCount, setPositionsVisibleCount] = useState(5);
+  const [tradesVisibleCount, setTradesVisibleCount] = useState(5);
   
   // Normalize questionType to internal format
   const questionType = normalizeQuestionType(rawQuestionType);
@@ -200,13 +202,13 @@ export function TradeHistorySection({ marketId, isSingle, questionType: rawQuest
                 <p>目前沒有交易記錄</p>
               </div>
             ) : (
-              allTrades.map((trade) => {
+              allTrades.slice(0, tradesVisibleCount).map((trade) => {
                 const totalCost = parseFloat(trade.totalCost);
                 const shares = parseFloat(trade.shares);
                 const isBuy = trade.isBuy;
                 const side = trade.side;
                 const direction = side.includes('YES') ? 'yes' : 'no';
-                const tradeDate = parseUTCTime(trade.createdAt);
+                const tradeDate = parseTimeString(trade.createdAt);
                 const normalizedOptionName = normalizeOptionName(trade.optionName || '', questionType);
 
                 return (
@@ -267,6 +269,30 @@ export function TradeHistorySection({ marketId, isSingle, questionType: rawQuest
               })
             )}
           </div>
+          {allTrades.length > 5 && (
+            <div className="mt-4 flex items-center gap-2">
+              {tradesVisibleCount < allTrades.length ? (
+                <button
+                  onClick={() =>
+                    setTradesVisibleCount((prev) => Math.min(prev + 5, allTrades.length))
+                  }
+                  className="px-3 py-2 text-sm rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+                >
+                  載入更多
+                </button>
+              ) : (
+                <button
+                  onClick={() => setTradesVisibleCount(5)}
+                  className="px-3 py-2 text-sm rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+                >
+                  收合
+                </button>
+              )}
+              <span className="text-xs text-slate-500">
+                顯示 {Math.min(tradesVisibleCount, allTrades.length)} / {allTrades.length}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Positions - Right */}
@@ -282,13 +308,13 @@ export function TradeHistorySection({ marketId, isSingle, questionType: rawQuest
                 <p>目前沒有持倉</p>
               </div>
             ) : (
-              activePositions.map((position) => {
+              activePositions.slice(0, positionsVisibleCount).map((position) => {
                 const totalCost = parseFloat(position.totalCost);
                 const currentValue = parseFloat(position.currentValue);
                 const profitLoss = parseFloat(position.profitLoss);
                 const profitLossPercent = parseFloat(position.profitLossPercent);
                 const isProfit = profitLoss >= 0;
-                const entryDate = parseUTCTime(position.firstTradeAt);
+                const entryDate = parseTimeString(position.firstTradeAt);
                 const normalizedOptionName = normalizeOptionName(position.optionName || '', questionType);
                 const direction = position.side === 'YES' ? 'yes' : 'no';
 
@@ -373,6 +399,30 @@ export function TradeHistorySection({ marketId, isSingle, questionType: rawQuest
               })
             )}
           </div>
+          {activePositions.length > 5 && (
+            <div className="mt-4 flex items-center gap-2">
+              {positionsVisibleCount < activePositions.length ? (
+                <button
+                  onClick={() =>
+                    setPositionsVisibleCount((prev) => Math.min(prev + 5, activePositions.length))
+                  }
+                  className="px-3 py-2 text-sm rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+                >
+                  載入更多
+                </button>
+              ) : (
+                <button
+                  onClick={() => setPositionsVisibleCount(5)}
+                  className="px-3 py-2 text-sm rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+                >
+                  收合
+                </button>
+              )}
+              <span className="text-xs text-slate-500">
+                顯示 {Math.min(positionsVisibleCount, activePositions.length)} / {activePositions.length}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>
