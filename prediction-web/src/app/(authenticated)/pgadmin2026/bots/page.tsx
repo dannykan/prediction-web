@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { uploadAvatar } from "@/features/user/api/uploadAvatar";
 
 interface BotGroup {
   id: string;
@@ -52,9 +53,11 @@ export default function BotsManagementPage() {
   const [editingBot, setEditingBot] = useState<Bot | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [batchGroupId, setBatchGroupId] = useState("");
   const [batchAvatarUrl, setBatchAvatarUrl] = useState("");
   const [batchUpdating, setBatchUpdating] = useState(false);
+  const [batchAvatarUploading, setBatchAvatarUploading] = useState(false);
   const [globalPause, setGlobalPause] = useState(false);
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "PAUSED" | "ERROR">("ALL");
 
@@ -242,6 +245,32 @@ export default function BotsManagementPage() {
       loadData();
     } catch (error) {
       alert("更新失敗");
+    }
+  };
+
+  const handleAvatarUpload = async (file: File, mode: "single" | "batch") => {
+    try {
+      if (mode === "single") {
+        setAvatarUploading(true);
+      } else {
+        setBatchAvatarUploading(true);
+      }
+
+      const url = await uploadAvatar(file);
+
+      if (mode === "single") {
+        setEditAvatarUrl(url);
+      } else {
+        setBatchAvatarUrl(url);
+      }
+    } catch (error: any) {
+      alert(`上傳失敗: ${error.message || "未知錯誤"}`);
+    } finally {
+      if (mode === "single") {
+        setAvatarUploading(false);
+      } else {
+        setBatchAvatarUploading(false);
+      }
     }
   };
 
@@ -568,6 +597,25 @@ export default function BotsManagementPage() {
                   placeholder="https://..."
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 />
+                <div className="mt-2">
+                  <label className="block text-sm text-gray-600 mb-1">
+                    或上傳本機圖片
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={avatarUploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleAvatarUpload(file, "single");
+                      }
+                    }}
+                  />
+                  {avatarUploading && (
+                    <div className="text-xs text-gray-500 mt-1">上傳中...</div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -620,6 +668,25 @@ export default function BotsManagementPage() {
                   placeholder="留空可清除頭像"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 />
+                <div className="mt-2">
+                  <label className="block text-sm text-gray-600 mb-1">
+                    或上傳本機圖片
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={batchAvatarUploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleAvatarUpload(file, "batch");
+                      }
+                    }}
+                  />
+                  {batchAvatarUploading && (
+                    <div className="text-xs text-gray-500 mt-1">上傳中...</div>
+                  )}
+                </div>
               </div>
             </div>
 
