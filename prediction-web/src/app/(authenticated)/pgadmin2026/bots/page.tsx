@@ -43,10 +43,14 @@ export default function BotsManagementPage() {
   const [groups, setGroups] = useState<BotGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string>("");
   const [botCount, setBotCount] = useState(10);
   const [initialBalance, setInitialBalance] = useState(10000);
   const [creating, setCreating] = useState(false);
+  const [editingBot, setEditingBot] = useState<Bot | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editAvatarUrl, setEditAvatarUrl] = useState("");
   const [globalPause, setGlobalPause] = useState(false);
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "PAUSED" | "ERROR">("ALL");
 
@@ -206,6 +210,37 @@ export default function BotsManagementPage() {
     }
   };
 
+  const openEditModal = (bot: Bot) => {
+    setEditingBot(bot);
+    setEditDisplayName(bot.displayName || "");
+    setEditAvatarUrl(bot.avatarUrl || "");
+    setShowEditModal(true);
+  };
+
+  const handleSaveBotProfile = async () => {
+    if (!editingBot) return;
+    try {
+      const response = await fetch(`/api/admin/bots/${editingBot.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          displayName: editDisplayName.trim(),
+          avatarUrl: editAvatarUrl.trim() || null,
+        }),
+      });
+
+      if (!response.ok) throw new Error("更新失敗");
+
+      alert("更新成功");
+      setShowEditModal(false);
+      setEditingBot(null);
+      loadData();
+    } catch (error) {
+      alert("更新失敗");
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -228,6 +263,12 @@ export default function BotsManagementPage() {
             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
           >
             返回主頁
+          </Link>
+          <Link
+            href="/pgadmin2026/bot-trades"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            交易紀錄
           </Link>
         </div>
 
@@ -373,6 +414,12 @@ export default function BotsManagementPage() {
                       {bot.status === "ACTIVE" ? "暫停" : "啟動"}
                     </button>
                     <button
+                      onClick={() => openEditModal(bot)}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      編輯
+                    </button>
+                    <button
                       onClick={() => handleDeleteBot(bot.id)}
                       className="text-red-600 hover:text-red-800"
                     >
@@ -449,6 +496,52 @@ export default function BotsManagementPage() {
               <button
                 onClick={() => setShowCreateModal(false)}
                 disabled={creating}
+                className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && editingBot && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold mb-4">編輯機器人資料</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">名稱</label>
+                <input
+                  type="text"
+                  value={editDisplayName}
+                  onChange={(e) => setEditDisplayName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">頭像網址</label>
+                <input
+                  type="text"
+                  value={editAvatarUrl}
+                  onChange={(e) => setEditAvatarUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSaveBotProfile}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                保存
+              </button>
+              <button
+                onClick={() => setShowEditModal(false)}
                 className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
               >
                 取消
