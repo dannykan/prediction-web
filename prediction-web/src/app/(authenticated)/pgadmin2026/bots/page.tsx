@@ -199,6 +199,20 @@ export default function BotsManagementPage() {
     }
   };
 
+  const handleRecoverBot = async (botId: string) => {
+    try {
+      const response = await fetch(`/api/admin/bots/${botId}/recover`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("操作失敗");
+      loadData();
+    } catch (error) {
+      alert("操作失敗");
+    }
+  };
+
   const handleDeleteBot = async (botId: string) => {
     if (!confirm("確定要刪除這個機器人嗎？")) return;
 
@@ -475,10 +489,18 @@ export default function BotsManagementPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleToggleBot(bot.id, bot.status)}
+                      onClick={() =>
+                        bot.status === "ERROR"
+                          ? handleRecoverBot(bot.id)
+                          : handleToggleBot(bot.id, bot.status)
+                      }
                       className="text-blue-600 hover:text-blue-800"
                     >
-                      {bot.status === "ACTIVE" ? "暫停" : "啟動"}
+                      {bot.status === "ERROR"
+                        ? "恢復"
+                        : bot.status === "ACTIVE"
+                        ? "暫停"
+                        : "啟動"}
                     </button>
                     <button
                       onClick={() => openEditModal(bot)}
