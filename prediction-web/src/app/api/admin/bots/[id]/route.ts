@@ -8,12 +8,12 @@ import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const apiBaseUrl = getApiBaseUrl();
     const body = await request.json();
-    const { id } = params;
+    const { id } = await params;
 
     const response = await fetch(`${apiBaseUrl}/admin/bots/${id}`, {
       method: "PATCH",
@@ -42,11 +42,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const apiBaseUrl = getApiBaseUrl();
-    const { id } = params;
+    const { id } = await params;
 
     const response = await fetch(`${apiBaseUrl}/admin/bots/${id}`, {
       method: "DELETE",
