@@ -173,6 +173,34 @@ function AdminPageContent() {
           </p>
         </Link>
 
+        {/* 機器人管理 */}
+        <Link
+          href="/pgadmin2026/bots"
+          className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200"
+        >
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mr-4">
+              <svg
+                className="w-6 h-6 text-cyan-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold">機器人管理</h2>
+          </div>
+          <p className="text-gray-600">
+            管理自動交易機器人、創建和配置交易策略
+          </p>
+        </Link>
+
         {/* 獎勵配置 */}
         <Link
           href="/pgadmin2026/reward-configs"
