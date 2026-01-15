@@ -44,6 +44,7 @@ export default function BotsManagementPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showBatchAvatarModal, setShowBatchAvatarModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string>("");
   const [botCount, setBotCount] = useState(10);
   const [initialBalance, setInitialBalance] = useState(10000);
@@ -51,6 +52,9 @@ export default function BotsManagementPage() {
   const [editingBot, setEditingBot] = useState<Bot | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [batchGroupId, setBatchGroupId] = useState("");
+  const [batchAvatarUrl, setBatchAvatarUrl] = useState("");
+  const [batchUpdating, setBatchUpdating] = useState(false);
   const [globalPause, setGlobalPause] = useState(false);
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "PAUSED" | "ERROR">("ALL");
 
@@ -241,6 +245,34 @@ export default function BotsManagementPage() {
     }
   };
 
+  const handleBatchAvatarUpdate = async () => {
+    try {
+      setBatchUpdating(true);
+      const response = await fetch("/api/admin/bots/batch/avatar", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          groupId: batchGroupId || undefined,
+          avatarUrl: batchAvatarUrl.trim() || null,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "批量更新失敗");
+
+      alert(`更新成功：${data?.updated ?? 0} 個機器人`);
+      setShowBatchAvatarModal(false);
+      setBatchAvatarUrl("");
+      setBatchGroupId("");
+      loadData();
+    } catch (error: any) {
+      alert(`批量更新失敗: ${error.message || "未知錯誤"}`);
+    } finally {
+      setBatchUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -301,6 +333,12 @@ export default function BotsManagementPage() {
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             批量創建機器人
+          </button>
+          <button
+            onClick={() => setShowBatchAvatarModal(true)}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            批量修改頭像
           </button>
           <button
             onClick={handleToggleGlobalPause}
@@ -543,6 +581,60 @@ export default function BotsManagementPage() {
               <button
                 onClick={() => setShowEditModal(false)}
                 className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBatchAvatarModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold mb-4">批量修改頭像</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">群組</label>
+                <select
+                  value={batchGroupId}
+                  onChange={(e) => setBatchGroupId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value="">全部群組</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">頭像網址</label>
+                <input
+                  type="text"
+                  value={batchAvatarUrl}
+                  onChange={(e) => setBatchAvatarUrl(e.target.value)}
+                  placeholder="留空可清除頭像"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleBatchAvatarUpdate}
+                disabled={batchUpdating}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {batchUpdating ? "更新中..." : "確認更新"}
+              </button>
+              <button
+                onClick={() => setShowBatchAvatarModal(false)}
+                disabled={batchUpdating}
+                className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 disabled:opacity-50"
               >
                 取消
               </button>
