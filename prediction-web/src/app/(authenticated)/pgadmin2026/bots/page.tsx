@@ -98,7 +98,12 @@ export default function BotsManagementPage() {
       }
 
       // 確保數據格式正確
-      setBots(Array.isArray(botsData) ? botsData : []);
+      const resolvedBots = Array.isArray(botsData)
+        ? botsData
+        : Array.isArray(botsData?.bots)
+        ? botsData.bots
+        : [];
+      setBots(resolvedBots);
       setStats(statsData && !statsData.error && !statsData.message ? statsData : null);
       setGroups(Array.isArray(groupsData) ? groupsData : []);
       setGlobalPause(configData?.globalPause || false);
