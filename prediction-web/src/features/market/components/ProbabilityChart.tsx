@@ -676,7 +676,7 @@ export function ProbabilityChart({
                   dataKey="probability" 
                   stroke="#3b82f6" 
                   strokeWidth={2}
-                  dot={{ r: 4, fill: '#3b82f6' }}
+                  dot={false}
                   activeDot={{ r: 6, fill: '#2563eb' }}
                 />
               ) : isSingleChoice ? (
@@ -696,7 +696,7 @@ export function ProbabilityChart({
                       dataKey={outcomeKey}
                       stroke={color}
                       strokeWidth={2}
-                      dot={{ r: 3, fill: color }}
+                      dot={false}
                       activeDot={{ r: 5, fill: color }}
                       name={outcomeName}
                     />
@@ -719,7 +719,7 @@ export function ProbabilityChart({
                       dataKey={optionKey}
                       stroke={color}
                       strokeWidth={2}
-                      dot={{ r: 3, fill: color }}
+                      dot={false}
                       activeDot={{ r: 5, fill: color }}
                       name={optionName}
                     />
