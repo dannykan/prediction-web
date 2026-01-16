@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     siteName: "神預測 Prediction God",
     images: [
       {
-        url: absUrl("/og-default.png"),
+        url: absUrl("/images/logo.png"),
         width: 1200,
         height: 630,
         alt: "神預測 Prediction God",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "首頁 - 神預測 Prediction God",
     description: "瀏覽所有可用的預測市場，參與預測並贏得獎勵",
-    images: [absUrl("/og-default.png")],
+    images: [absUrl("/images/logo.png")],
   },
 };
 

@@ -36,7 +36,8 @@ export async function generateMetadata({ params }: MarketPageProps): Promise<Met
   // 處理圖片 URL：如果是完整 URL 直接使用，如果是相對 URL 則添加 API base URL
   const getOgImageUrl = (): string => {
     if (!market.imageUrl) {
-      return absUrl("/og-default.png");
+      // 使用 logo 作為默認圖片
+      return absUrl("/images/logo.png");
     }
     
     // 如果已經是完整的 HTTP/HTTPS URL，直接使用
@@ -57,6 +58,9 @@ export async function generateMetadata({ params }: MarketPageProps): Promise<Met
   };
   
   const ogImageUrl = getOgImageUrl();
+  
+  // 確保 URL 是絕對路徑，Facebook 需要完整的 URL
+  const absoluteUrl = canonicalUrl;
 
   return {
     title: `${market.title} - 神預測 Prediction God`,
@@ -67,7 +71,7 @@ export async function generateMetadata({ params }: MarketPageProps): Promise<Met
     openGraph: {
       title: market.title,
       description,
-      url: canonicalUrl,
+      url: absoluteUrl,
       siteName: "神預測 Prediction God",
       images: [
         {
