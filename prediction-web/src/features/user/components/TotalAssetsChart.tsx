@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { getUserTransactions, type Transaction } from "../api/getUserTransactions";
+import { getAssetSnapshots, recordAssetSnapshot, type AssetSnapshot } from "../api/getAssetSnapshots";
 
 interface TotalAssetsChartProps {
   userId: string;
@@ -31,8 +32,10 @@ const NEW_USER_REWARD = 1000; // Initial balance from newcomer reward
 
 export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: TotalAssetsChartProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [snapshots, setSnapshots] = useState<AssetSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>("week");
+  const [useSnapshots, setUseSnapshots] = useState(true); // Prefer snapshots over transactions
 
   // Calculate date range based on timeRange
   const getDateRange = (range: TimeRange, registrationDate: Date): { start: Date; end: Date } => {
@@ -80,171 +83,223 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
     async function loadData() {
       try {
         setLoading(true);
-        // Load ALL transactions (not filtered by date range)
-        // We need all transactions to find the starting balance for any time range
-        const allTransactions = await getUserTransactions(userId);
         
-        // Sort by date
-        allTransactions.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        // Record current snapshot (async, don't wait)
+        recordAssetSnapshot(userId).catch((error) => {
+          console.warn("[TotalAssetsChart] Failed to record asset snapshot:", error);
+        });
+
+        // Try to load snapshots first (preferred method)
+        const assetSnapshots = await getAssetSnapshots(userId);
         
-        setTransactions(allTransactions);
+        if (assetSnapshots.length > 0) {
+          // Use snapshots if available
+          setSnapshots(assetSnapshots);
+          setUseSnapshots(true);
+          console.log(`[TotalAssetsChart] Loaded ${assetSnapshots.length} asset snapshots`);
+        } else {
+          // Fallback to transactions if no snapshots available
+          console.log("[TotalAssetsChart] No snapshots found, falling back to transactions");
+          const allTransactions = await getUserTransactions(userId);
+          allTransactions.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          setTransactions(allTransactions);
+          setUseSnapshots(false);
+        }
       } catch (error) {
-        console.error("[TotalAssetsChart] Failed to load transactions:", error);
-        setTransactions([]);
+        console.error("[TotalAssetsChart] Failed to load data:", error);
+        // Fallback to transactions on error
+        try {
+          const allTransactions = await getUserTransactions(userId);
+          allTransactions.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          setTransactions(allTransactions);
+          setUseSnapshots(false);
+        } catch (fallbackError) {
+          console.error("[TotalAssetsChart] Failed to load transactions as fallback:", fallbackError);
+          setTransactions([]);
+          setSnapshots([]);
+        }
       } finally {
         setLoading(false);
       }
     }
 
     loadData();
-  }, [userId, userCreatedAt]); // Remove timeRange dependency - load all transactions once
+  }, [userId, userCreatedAt]);
 
-  // Transform transactions to total assets history
+  // Transform snapshots or transactions to total assets history
   const chartData = useMemo(() => {
     const registrationDate = new Date(userCreatedAt);
-    const { start } = getDateRange(timeRange, registrationDate);
+    const { start, end } = getDateRange(timeRange, registrationDate);
     const dataPoints: ChartDataPoint[] = [];
 
-    // Find the balance at the start date by looking at transactions before or at that date
-    // If start date is registration date, initial balance is 1000
-    // Otherwise, find the last transaction before or at the start date
-    let startingBalance = NEW_USER_REWARD; // Default to 1000 (newcomer reward)
-    
-    // Sort transactions by date (ascending)
-    const sortedTxs = [...transactions].sort((a, b) => 
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-    
-    // Find the last transaction at or before the start date
-    // We need to find the transaction that occurred on or before the start date
-    // Start from the end and go backwards to find the most recent one
-    let foundStartingBalance = false;
-    for (let i = sortedTxs.length - 1; i >= 0; i--) {
-      const tx = sortedTxs[i];
-      const txDate = new Date(tx.createdAt);
-      const txTimestamp = txDate.getTime();
-      
-      // Compare dates at day level (ignore time)
-      const startDateOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-      const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
-      
-      if (txDateOnly.getTime() <= startDateOnly.getTime()) {
-        startingBalance = tx.balanceAfter;
-        foundStartingBalance = true;
-        console.log(`[TotalAssetsChart] Found starting balance for ${start.toISOString()}: ${startingBalance} from transaction at ${tx.createdAt}`);
-        break;
-      }
-    }
-    
-    if (!foundStartingBalance && start.getTime() > registrationDate.getTime()) {
-      // If start date is after registration but no transaction found,
-      // this shouldn't happen normally, but use default 1000
-      // Only log in development mode to reduce console noise
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(`[TotalAssetsChart] No transaction found before start date ${start.toISOString()}, using default ${NEW_USER_REWARD}`);
-      }
-    }
-
-    // Group transactions by date and get the latest balanceAfter for each date
-    // Only include transactions within the time range (after start date)
-    const dateMap = new Map<string, { balance: number; timestamp: number }>();
-    
-    sortedTxs.forEach((tx) => {
-      const date = new Date(tx.createdAt);
-      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
-      const timestamp = date.getTime();
-      
-      // Only include transactions after the start date (or on the start date if it has transactions)
-      if (timestamp < start.getTime()) {
-        return; // Skip transactions before the start date
-      }
-      
-      // Keep the latest transaction for each date
-      const existing = dateMap.get(dateKey);
-      if (!existing || timestamp > existing.timestamp) {
-        // balanceAfter already includes all effects:
-        // - Initial balance (1000 from newcomer reward)
-        // - PnL from trades
-        // - System adjustments (admin adjustments, rewards, etc.)
-        dateMap.set(dateKey, { balance: tx.balanceAfter, timestamp });
-      }
-    });
-
-    // Add starting point with the correct balance at that date
-    const startDateKey = start.toISOString().split('T')[0];
-    let startDateLabel: string;
-    switch (timeRange) {
-      case "day":
-        startDateLabel = start.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" });
-        break;
-      case "week":
-      case "month":
-        startDateLabel = start.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
-        break;
-      case "year":
-      case "all":
-        startDateLabel = start.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" });
-        break;
-      default:
-        startDateLabel = start.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
-    }
-
-    // Check if there's a transaction on the start date
-    const hasStartDateData = dateMap.has(startDateKey);
-    
-    // Add starting point if:
-    // 1. There's no transaction on the start date (need to show the starting balance)
-    // We always want to show the starting point to establish the baseline
-    if (!hasStartDateData) {
-      // Total assets at start uses starting balance (pending changes over time)
-      const startTotalAssets = startingBalance;
-      dataPoints.push({
-        date: startDateKey,
-        dateLabel: startDateLabel,
-        totalAssets: Number(startTotalAssets.toFixed(2)),
-        timestamp: start.getTime(),
+    if (useSnapshots && snapshots.length > 0) {
+      // Use snapshots (preferred method - includes total assets with positions value)
+      const filteredSnapshots = snapshots.filter((snapshot) => {
+        const snapshotDate = new Date(snapshot.date);
+        return snapshotDate >= start && snapshotDate <= end;
       });
+
+      filteredSnapshots.forEach((snapshot) => {
+        const dateObj = new Date(snapshot.date);
+        const dateTimestamp = dateObj.getTime();
+        
+        let dateLabel: string;
+        switch (timeRange) {
+          case "day":
+            dateLabel = dateObj.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" });
+            break;
+          case "week":
+          case "month":
+            dateLabel = dateObj.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
+            break;
+          case "year":
+          case "all":
+            dateLabel = dateObj.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" });
+            break;
+          default:
+            dateLabel = dateObj.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
+        }
+
+        dataPoints.push({
+          date: snapshot.date,
+          dateLabel,
+          totalAssets: Number(snapshot.totalAssets.toFixed(2)),
+          timestamp: dateTimestamp,
+        });
+      });
+
+      // Add starting point if no snapshot on start date
+      const startDateKey = start.toISOString().split('T')[0];
+      const hasStartSnapshot = filteredSnapshots.some(s => s.date === startDateKey);
+      
+      if (!hasStartSnapshot && filteredSnapshots.length > 0) {
+        // Find the snapshot before start date to use as starting point
+        const beforeStart = snapshots
+          .filter(s => new Date(s.date) < start)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+        
+        const startTotalAssets = beforeStart ? beforeStart.totalAssets : NEW_USER_REWARD;
+        let startDateLabel: string;
+        switch (timeRange) {
+          case "day":
+            startDateLabel = start.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" });
+            break;
+          case "week":
+          case "month":
+            startDateLabel = start.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
+            break;
+          case "year":
+          case "all":
+            startDateLabel = start.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" });
+            break;
+          default:
+            startDateLabel = start.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
+        }
+        
+        dataPoints.push({
+          date: startDateKey,
+          dateLabel: startDateLabel,
+          totalAssets: Number(startTotalAssets.toFixed(2)),
+          timestamp: start.getTime(),
+        });
+      }
     } else {
-      // If there's a transaction on the start date, we should still add a starting point
-      // before the first transaction to show the balance at the start of that day
-      // But for simplicity, we'll use the starting balance for the first data point
-      // Actually, let's not add a duplicate - the transaction data will show the balance
-      // But we need to ensure the first transaction shows the correct balance
-      // The transaction's balanceAfter should already be correct, so we're good
-    }
-
-    // Add transaction-based data points within the time range
-    Array.from(dateMap.entries()).forEach(([date, { balance }]) => {
-      const dateObj = new Date(date);
-      const dateTimestamp = dateObj.getTime();
+      // Fallback to transactions (legacy method - only shows balance, not total assets)
+      let startingBalance = NEW_USER_REWARD;
       
-      let dateLabel: string;
-      switch (timeRange) {
-        case "day":
-          dateLabel = dateObj.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" });
+      const sortedTxs = [...transactions].sort((a, b) => 
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      
+      // Find starting balance
+      for (let i = sortedTxs.length - 1; i >= 0; i--) {
+        const tx = sortedTxs[i];
+        const txDate = new Date(tx.createdAt);
+        const startDateOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+        
+        if (txDateOnly.getTime() <= startDateOnly.getTime()) {
+          startingBalance = tx.balanceAfter || NEW_USER_REWARD;
           break;
-        case "week":
-        case "month":
-          dateLabel = dateObj.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
-          break;
-        case "year":
-        case "all":
-          dateLabel = dateObj.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" });
-          break;
-        default:
-          dateLabel = dateObj.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
+        }
       }
 
-      // Total assets history uses balanceAfter (no pending approximation)
-      const totalAssets = balance;
-
-      dataPoints.push({
-        date,
-        dateLabel,
-        totalAssets: Number(totalAssets.toFixed(2)),
-        timestamp: dateTimestamp,
+      // Group transactions by date
+      const dateMap = new Map<string, { balance: number; timestamp: number }>();
+      
+      sortedTxs.forEach((tx) => {
+        const date = new Date(tx.createdAt);
+        const dateKey = date.toISOString().split('T')[0];
+        const timestamp = date.getTime();
+        
+        if (timestamp < start.getTime()) {
+          return;
+        }
+        
+        const existing = dateMap.get(dateKey);
+        if (!existing || timestamp > existing.timestamp) {
+          dateMap.set(dateKey, { balance: tx.balanceAfter || startingBalance, timestamp });
+        }
       });
-    });
+
+      // Add starting point
+      const startDateKey = start.toISOString().split('T')[0];
+      if (!dateMap.has(startDateKey)) {
+        let startDateLabel: string;
+        switch (timeRange) {
+          case "day":
+            startDateLabel = start.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" });
+            break;
+          case "week":
+          case "month":
+            startDateLabel = start.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
+            break;
+          case "year":
+          case "all":
+            startDateLabel = start.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" });
+            break;
+          default:
+            startDateLabel = start.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
+        }
+        
+        dataPoints.push({
+          date: startDateKey,
+          dateLabel: startDateLabel,
+          totalAssets: Number(startingBalance.toFixed(2)),
+          timestamp: start.getTime(),
+        });
+      }
+
+      // Add transaction-based data points
+      Array.from(dateMap.entries()).forEach(([date, { balance }]) => {
+        const dateObj = new Date(date);
+        const dateTimestamp = dateObj.getTime();
+        
+        let dateLabel: string;
+        switch (timeRange) {
+          case "day":
+            dateLabel = dateObj.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" });
+            break;
+          case "week":
+          case "month":
+            dateLabel = dateObj.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
+            break;
+          case "year":
+          case "all":
+            dateLabel = dateObj.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" });
+            break;
+          default:
+            dateLabel = dateObj.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
+        }
+
+        dataPoints.push({
+          date,
+          dateLabel,
+          totalAssets: Number(balance.toFixed(2)),
+          timestamp: dateTimestamp,
+        });
+      });
+    }
 
     // Sort by timestamp
     dataPoints.sort((a, b) => a.timestamp - b.timestamp);
@@ -289,7 +344,7 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
     }
 
     return finalDataPoints;
-  }, [transactions, timeRange, currentTotalAssets, userCreatedAt]);
+  }, [snapshots, transactions, timeRange, currentTotalAssets, userCreatedAt, useSnapshots]);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString(undefined, {
