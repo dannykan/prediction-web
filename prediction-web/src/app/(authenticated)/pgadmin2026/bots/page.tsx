@@ -488,6 +488,12 @@ export default function BotsManagementPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex gap-2">
+                    <Link
+                      href={`/pgadmin2026/bots/${bot.userId}/trading-history`}
+                      className="text-green-600 hover:text-green-800"
+                    >
+                      交易詳情
+                    </Link>
                     <button
                       onClick={() =>
                         bot.status === "ERROR"
