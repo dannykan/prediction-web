@@ -72,24 +72,38 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
                   logger.logWithPrefix('MarketCardUI', `Set YES probability from last trade (fallback) for market ${market.id}:`, probability);
                 } else {
                   // 如果交易記錄沒有 priceYesAfter，使用 option markets 的 priceYes
-                  const optionMarkets = await getOptionMarketsByMarketId(market.id);
-                  if (optionMarkets && optionMarkets.length > 0) {
-                    const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
-                    setYesProbability(priceYes);
-                    logger.logWithPrefix('MarketCardUI', `Set YES probability from option market for market ${market.id}:`, priceYes);
-                  } else {
-                    logger.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
+                  // 但只在確認是 YES_NO 類型時才查找 option markets
+                  try {
+                    const optionMarkets = await getOptionMarketsByMarketId(market.id);
+                    if (optionMarkets && optionMarkets.length > 0) {
+                      const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
+                      setYesProbability(priceYes);
+                      logger.logWithPrefix('MarketCardUI', `Set YES probability from option market for market ${market.id}:`, priceYes);
+                    } else {
+                      // 使用默認值，不發出警告（可能是數據加載中）
+                      setYesProbability(50);
+                    }
+                  } catch (optionError) {
+                    // 使用默認值，不發出警告
+                    setYesProbability(50);
                   }
                 }
               } else {
                 // 如果沒有交易記錄，使用 option markets 的 priceYes
-                const optionMarkets = await getOptionMarketsByMarketId(market.id);
-                if (optionMarkets && optionMarkets.length > 0) {
-                  const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
-                  setYesProbability(priceYes);
-                  logger.logWithPrefix('MarketCardUI', `No trades found, using option market priceYes for market ${market.id}:`, priceYes);
-                } else {
-                  logger.warn(`[MarketCardUI] No option markets found for LMSR market ${market.id}, keeping loading state`);
+                // 但只在確認是 YES_NO 類型時才查找 option markets
+                try {
+                  const optionMarkets = await getOptionMarketsByMarketId(market.id);
+                  if (optionMarkets && optionMarkets.length > 0) {
+                    const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
+                    setYesProbability(priceYes);
+                    logger.logWithPrefix('MarketCardUI', `No trades found, using option market priceYes for market ${market.id}:`, priceYes);
+                  } else {
+                    // 使用默認值，不發出警告（可能是數據加載中）
+                    setYesProbability(50);
+                  }
+                } catch (optionError) {
+                  // 使用默認值，不發出警告
+                  setYesProbability(50);
                 }
               }
             } catch (error) {
@@ -100,9 +114,12 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
                 if (optionMarkets && optionMarkets.length > 0) {
                   const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
                   setYesProbability(priceYes);
+                } else {
+                  setYesProbability(50);
                 }
               } catch (fallbackError) {
-                console.error(`[MarketCardUI] Error fetching option markets as fallback:`, fallbackError);
+                // 使用默認值
+                setYesProbability(50);
               }
             }
           } else {

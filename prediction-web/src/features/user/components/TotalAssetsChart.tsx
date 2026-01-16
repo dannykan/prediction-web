@@ -139,7 +139,10 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
     if (!foundStartingBalance && start.getTime() > registrationDate.getTime()) {
       // If start date is after registration but no transaction found,
       // this shouldn't happen normally, but use default 1000
-      console.warn(`[TotalAssetsChart] No transaction found before start date ${start.toISOString()}, using default ${NEW_USER_REWARD}`);
+      // Only log in development mode to reduce console noise
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[TotalAssetsChart] No transaction found before start date ${start.toISOString()}, using default ${NEW_USER_REWARD}`);
+      }
     }
 
     // Group transactions by date and get the latest balanceAfter for each date
@@ -364,7 +367,7 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
         })}
       </div>
 
-      <div className="h-48 md:h-80 w-full overflow-hidden">
+      <div className="h-48 md:h-80 w-full overflow-hidden" style={{ minWidth: 0, minHeight: '192px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
