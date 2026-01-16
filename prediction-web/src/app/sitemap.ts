@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getMarkets } from "@/features/market/api/getMarkets";
 import { absUrl } from "@/shared/utils/seo";
+import { buildMarketUrl } from "@/features/market/utils/marketUrl";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Limit to first 1000 markets for sitemap
@@ -8,7 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const limitedMarkets = markets.slice(0, 1000);
 
   const marketUrls = limitedMarkets.map((market) => ({
-    url: absUrl(`/m/${market.shortcode}-${market.slug}`),
+    url: absUrl(buildMarketUrl(market.shortcode, market.slug)),
     lastModified: new Date(market.updatedAt),
     changeFrequency: "daily" as const,
     priority: 0.8,

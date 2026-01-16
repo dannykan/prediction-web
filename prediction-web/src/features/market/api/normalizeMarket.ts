@@ -6,18 +6,33 @@ import type { Market } from "../types/market";
 
 /**
  * Generate slug from title
- * Preserves Chinese characters and other Unicode characters
- * Removes or replaces characters that are not suitable for URLs
+ * Replaces all symbols (except alphanumeric, Chinese, and hyphens) with hyphens
+ * Removes trailing question marks
  */
 function generateSlug(title: string): string {
   return title
     .trim()
-    .replace(/\//g, "-") // Replace forward slashes with hyphens (important for URL safety)
-    .replace(/\\/g, "-") // Replace backslashes with hyphens
-    .replace(/\s+/g, "-") // Replace spaces with hyphens
-    .replace(/[?#&]/g, "-") // Replace URL-unsafe characters with hyphens
+    // Replace all symbols (non-alphanumeric, non-Chinese, non-hyphen) with hyphens
+    // This includes: !@#$%^&*()_+=[]{}|;:'",.<>?/~` etc.
+    .replace(/[^\p{L}\p{N}-]/gu, "-") // \p{L} = any letter (including Chinese), \p{N} = any number
     .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
-    .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
+    .replace(/^-|-$/g, "") // Remove leading/trailing hyphens
+    .replace(/\?+$/, ""); // Remove trailing question marks
+}
+
+/**
+ * Normalize URL part (shortcode or slug) by replacing all symbols with hyphens
+ * This ensures URLs don't break when shared on social platforms
+ */
+export function normalizeUrlPart(part: string): string {
+  if (!part) return part;
+  return part
+    .trim()
+    // Replace all symbols (non-alphanumeric, non-Chinese, non-hyphen) with hyphens
+    .replace(/[^\p{L}\p{N}-]/gu, "-")
+    .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, "") // Remove leading/trailing hyphens
+    .replace(/\?+$/, ""); // Remove trailing question marks
 }
 
 /**
@@ -184,7 +199,9 @@ export function normalizeMarket(
     throw new Error(`Market missing shortcode: ${JSON.stringify(backendMarket)}`);
   }
 
-  const slug = generateSlug(backendMarket.title);
+  let slug = generateSlug(backendMarket.title);
+  // Ensure slug is normalized (replace all symbols with hyphens, remove trailing question marks)
+  slug = normalizeUrlPart(slug);
   
   const { yesPercentage, noPercentage } = calculateYesNoPercentages(
     backendMarket.options,
@@ -228,11 +245,15 @@ export function normalizeMarket(
     avatarUrl: creator.avatarUrl ? resolveImageUrl(creator.avatarUrl) : undefined,
   } : null;
 
+  // Normalize shortcode to ensure no symbols break URLs
+  const normalizedShortcode = normalizeUrlPart(String(shortcode));
+  const normalizedSlug = normalizeUrlPart(slug);
+  
   return {
     id: backendMarket.id || String(shortcode),
-    shortcode: String(shortcode),
-    code: String(shortcode), // Alias for shortcode
-    slug,
+    shortcode: normalizedShortcode,
+    code: normalizedShortcode, // Alias for shortcode
+    slug: normalizedSlug,
     title: backendMarket.title,
     description: backendMarket.description || "",
     imageUrl: resolveImageUrl(backendMarket.imageUrl),

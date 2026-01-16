@@ -9,12 +9,14 @@ import Image from 'next/image';
 import type { Market } from '@/features/market/types/market';
 import { LmsrTradingCard } from '@/features/market/components/LmsrTradingCard';
 import { ProbabilityChart } from '@/features/market/components/ProbabilityChart';
+import { MyPosition } from '@/features/market/components/MyPosition';
 import { CommentsSection } from '@/features/comment/components/CommentsSection';
 import { TradeHistorySection } from '@/features/market/components/TradeHistorySection';
 import { SidebarUI } from './SidebarUI';
 import { MobileHeaderUI } from './MobileHeaderUI';
 import { PullToRefresh } from './PullToRefresh';
 import { MarketDetailClient } from '@/features/market/components/MarketDetailClient';
+import type { MarketDetailData } from '@/features/market/api/getMarketDetailData';
 
 interface MarketDetailUIProps {
   market: Market;
@@ -33,6 +35,8 @@ interface MarketDetailUIProps {
   isFollowing?: boolean;
   commentId?: string;
   onCommentsCountChange?: (count: number) => void;
+  marketDetailData?: MarketDetailData | null;
+  dataLoading?: boolean;
 }
 
 export function MarketDetailUI({
@@ -47,10 +51,14 @@ export function MarketDetailUI({
   isFollowing = false,
   commentId,
   onCommentsCountChange,
+  marketDetailData,
+  dataLoading = false,
 }: MarketDetailUIProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isResolutionRulesExpanded, setIsResolutionRulesExpanded] = useState(false);
+  // For MULTIPLE_CHOICE: track which options are selected for chart display
+  const [selectedOptionsForChart, setSelectedOptionsForChart] = useState<Set<string>>(new Set());
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -276,6 +284,27 @@ export function MarketDetailUI({
                   isSingle={market.questionType === 'SINGLE_CHOICE'}
                   questionType={market.questionType}
                   marketOptions={market.options || []}
+                  selectedOptionIds={Array.from(selectedOptionsForChart)}
+                  optionMarkets={marketDetailData?.marketData?.optionMarkets?.map(om => ({
+                    id: om.id,
+                    optionId: om.optionId,
+                    optionName: om.optionName,
+                  })) || []}
+                  marketDetailData={marketDetailData}
+                  dataLoading={dataLoading}
+                />
+              </MarketDetailClient>
+            </div>
+
+            {/* My Position */}
+            <div className="mb-4">
+              <MarketDetailClient marketId={market.id}>
+                <MyPosition 
+                  marketId={market.id}
+                  isLoggedIn={isLoggedIn || false}
+                  questionType={market.questionType}
+                  marketDetailData={marketDetailData}
+                  dataLoading={dataLoading}
                 />
               </MarketDetailClient>
             </div>
@@ -286,6 +315,10 @@ export function MarketDetailUI({
                 marketId={market.id} 
                 market={market}
                 onLogin={onLogin}
+                marketDetailData={marketDetailData}
+                dataLoading={dataLoading}
+                selectedOptionsForChart={selectedOptionsForChart}
+                onSelectedOptionsForChartChange={setSelectedOptionsForChart}
                 onTradeSuccess={async () => {
                   // 交易成功後立即刷新頁面
                   window.location.reload();
@@ -312,6 +345,8 @@ export function MarketDetailUI({
                   marketId={market.id} 
                   isSingle={market.questionType === 'SINGLE_CHOICE'}
                   questionType={market.questionType}
+                  marketDetailData={marketDetailData}
+                  dataLoading={dataLoading}
                 />
               </MarketDetailClient>
             </div>

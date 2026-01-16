@@ -7,6 +7,7 @@ import { QuestionTypeBadge } from "./QuestionTypeBadge";
 import { GCoinIcon } from "@/components/GCoinIcon";
 import { formatVolume } from "@/shared/utils/format";
 import { ImageWithFallback } from "./ImageWithFallback";
+import { buildMarketUrl } from "../utils/marketUrl";
 
 interface CompactMarketCardProps {
   market: Market;
@@ -15,7 +16,7 @@ interface CompactMarketCardProps {
 
 export function CompactMarketCard({ market, index }: CompactMarketCardProps) {
   const isLargeBanner = index < 3;
-  const marketUrl = `/m/${market.shortcode}-${market.slug}`;
+  const marketUrl = buildMarketUrl(market.shortcode, market.slug);
   
   const questionType = market.questionType || 'YES_NO';
   const yesPercent = market.yesPercentage;

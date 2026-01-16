@@ -2,13 +2,14 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Market } from "../types/market";
 import { formatPercentage, formatVolume } from "@/shared/utils/format";
+import { buildMarketUrl } from "../utils/marketUrl";
 
 interface MarketCardProps {
   market: Market;
 }
 
 export function MarketCard({ market }: MarketCardProps) {
-  const marketUrl = `/m/${market.shortcode}-${market.slug}`;
+  const marketUrl = buildMarketUrl(market.shortcode, market.slug);
 
   return (
     <Link href={marketUrl} className="block">

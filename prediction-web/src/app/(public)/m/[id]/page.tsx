@@ -7,6 +7,7 @@ import { absUrl } from "@/shared/utils/seo";
 import { truncateText } from "@/shared/utils/format";
 import { getCommentsCount } from "@/features/comment/api/getCommentsCount";
 import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
+import { buildMarketUrl } from "@/features/market/utils/marketUrl";
 
 export const revalidate = 60;
 
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: MarketPageProps): Promise<Met
     };
   }
 
-  const canonicalUrl = absUrl(`/m/${market.shortcode}-${market.slug}`);
+  const canonicalUrl = absUrl(buildMarketUrl(market.shortcode, market.slug));
   const description = truncateText(market.description, 160);
 
   // 使用市場自己的配圖，如果沒有則使用默認圖片
@@ -154,7 +155,7 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
         });
       }
       // Redirect to canonical URL (Next.js Link/router will handle encoding automatically)
-      redirect(`/m/${market.shortcode}-${market.slug}${commentId ? `?comment=${commentId}` : ''}`);
+      redirect(buildMarketUrl(market.shortcode, market.slug, commentId ? { comment: commentId } : undefined));
     } else {
       // Slugs are the same after normalization, no redirect needed
       if (process.env.NODE_ENV === 'development') {

@@ -5,6 +5,7 @@ import { getUserComments, type UserComment } from "../api/getUserComments";
 import { getMarketShortcodeById } from "@/features/market/api/getMarketShortcodeById";
 import Link from "next/link";
 import Image from "next/image";
+import { buildMarketUrl } from "@/features/market/utils/marketUrl";
 
 interface UserCommentsListProps {
   userId: string;
@@ -149,7 +150,7 @@ export function UserCommentsList({ userId }: UserCommentsListProps) {
         
         // Generate slug from title if not available (preserves Chinese characters)
         const slug = (comment.market as any).slug || comment.market.title.trim().replace(/\s+/g, "-");
-        const marketUrl = `/m/${shortcode}-${slug}?comment=${comment.id}`;
+        const marketUrl = buildMarketUrl(shortcode, slug, { comment: comment.id });
         
         return (
         <Link

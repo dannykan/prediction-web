@@ -6,6 +6,7 @@ import { getMe } from "@/features/user/api/getMe";
 import { createMarket } from "@/features/market/api/createMarket";
 import type { User } from "@/features/user/types/user";
 import { getCategoriesClient, type Category } from "@/features/market/api/getCategoriesClient";
+import { buildMarketUrl } from "@/features/market/utils/marketUrl";
 
 export default function CreateQuestionPage() {
   const router = useRouter();
@@ -134,7 +135,7 @@ export default function CreateQuestionPage() {
       if (result.market.shortcode) {
         // Use the slug from the backend (preserves Chinese characters)
         const slug = result.market.slug || result.market.title.trim().replace(/\s+/g, "-");
-        router.push(`/m/${result.market.shortcode}-${slug}`);
+        router.push(buildMarketUrl(result.market.shortcode, slug));
       } else {
         router.push("/home");
       }

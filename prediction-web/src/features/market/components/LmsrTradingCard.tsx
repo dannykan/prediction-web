@@ -36,20 +36,34 @@ import { formatPercentage, formatCurrency } from "@/shared/utils/format";
 import type { Market } from "../types/market";
 import { getMe } from "@/features/user/api/getMe";
 import type { User } from "@/features/user/types/user";
-import { ProbabilityChart } from "./ProbabilityChart";
 import { MarketDetailClient } from "./MarketDetailClient";
+import type { MarketDetailData } from "../api/getMarketDetailData";
 
 interface LmsrTradingCardProps {
   marketId: string;
   market?: Market; // 傳入 market 對象以獲取 questionType 和 options
   onLogin?: () => void | Promise<void>; // 登入回調函數
   onTradeSuccess?: () => void | Promise<void>; // 交易成功後的回調函數
+  marketDetailData?: MarketDetailData | null;
+  dataLoading?: boolean;
+  selectedOptionsForChart?: Set<string>; // For multiple choice: which options are selected for chart
+  onSelectedOptionsForChartChange?: (selectedOptions: Set<string>) => void; // Callback to update selected options
 }
 
-export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: LmsrTradingCardProps) {
+export function LmsrTradingCard({ 
+  marketId, 
+  market, 
+  onLogin, 
+  onTradeSuccess, 
+  marketDetailData, 
+  dataLoading = false,
+  selectedOptionsForChart: externalSelectedOptionsForChart,
+  onSelectedOptionsForChartChange,
+}: LmsrTradingCardProps) {
   const [optionMarkets, setOptionMarkets] = useState<OptionMarketInfo[]>([]);
   const [exclusiveMarket, setExclusiveMarket] = useState<ExclusiveMarketInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false); // 跟踪是否已经尝试过加载
   const [currentYesProbability, setCurrentYesProbability] = useState<number | null>(null); // 當前 YES 機率（從最後一筆交易獲取）
   const [error, setError] = useState<string | null>(null);
   const [selectedOptionMarket, setSelectedOptionMarket] = useState<string | null>(null);
@@ -67,7 +81,12 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
   const [closingPositionId, setClosingPositionId] = useState<string | null>(null); // Track which position is being closed
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userLoading, setUserLoading] = useState(true);
-  const [selectedOptionsForChart, setSelectedOptionsForChart] = useState<Set<string>>(new Set()); // For multiple choice: track which options are selected for chart display
+  // Use external state if provided, otherwise use internal state
+  const [internalSelectedOptionsForChart, setInternalSelectedOptionsForChart] = useState<Set<string>>(new Set());
+  const selectedOptionsForChart = externalSelectedOptionsForChart ?? internalSelectedOptionsForChart;
+  const setSelectedOptionsForChart = onSelectedOptionsForChartChange 
+    ? (newSet: Set<string>) => onSelectedOptionsForChartChange(newSet)
+    : setInternalSelectedOptionsForChart;
   
   const questionType = market?.questionType || 'YES_NO';
   const isBinary = questionType === 'YES_NO';
@@ -591,6 +610,9 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
 
   useEffect(() => {
     loadMarkets();
+  }, [marketId, isSingle, isBinary, isMultiple, questionType, market?.mechanism, marketDetailData, dataLoading]);
+
+  useEffect(() => {
     loadPositions();
     loadUser();
   }, [marketId]);
@@ -640,6 +662,7 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
     try {
       setLoading(true);
       setError(null);
+      setHasAttemptedLoad(true); // 标记已尝试加载
       
       logger.logWithPrefix('LmsrTradingCard', 'Loading markets:', {
         marketId,
@@ -648,103 +671,126 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
         isMultiple,
         questionType,
         mechanism: market?.mechanism,
+        hasAggregatedData: !!marketDetailData,
+        dataLoading,
       });
       
-      // 單選題使用 exclusive markets，其他（是非題、多選題）使用 option markets
-      if (isSingle) {
-        logger.logWithPrefix('LmsrTradingCard', 'Fetching exclusive market for single choice question');
-        try {
-          const data = await getExclusiveMarketByMarketId(marketId);
-          logger.logWithPrefix('LmsrTradingCard', 'Exclusive market loaded:', {
-            exclusiveMarketId: data.exclusiveMarketId,
-            outcomesCount: data.outcomes.length,
-            outcomes: data.outcomes.map(o => ({
-              outcomeId: o.outcomeId,
-              optionName: o.optionName,
-              type: o.type,
-              price: o.price,
-              pricePercent: (parseFloat(o.price) * 100).toFixed(2) + '%',
-              q: o.q,
-            })),
-            priceSum: data.outcomes.reduce((sum, o) => sum + parseFloat(o.price), 0).toFixed(6),
-          });
-          setExclusiveMarket(data);
-        } catch (err: any) {
-          logger.error('[LmsrTradingCard] Failed to load exclusive market:', err);
-          setExclusiveMarket(null);
-          setError(`無法載入單選題市場數據: ${err.message || '未知錯誤'}`);
-        }
-        // Don't auto-select any outcome - let user choose
-      } else {
-        // 是非題和多選題都使用 option markets
-        logger.logWithPrefix('LmsrTradingCard', 'Fetching option markets for', isBinary ? 'YES_NO' : 'MULTIPLE_CHOICE', 'question');
-        try {
-          const data = await getOptionMarketsByMarketId(marketId);
-          logger.logWithPrefix('LmsrTradingCard', 'Option markets loaded:', {
-            count: data.length,
-            markets: data.map(om => ({
-              id: om.id,
-              optionId: om.optionId,
-              optionName: om.optionName,
-              priceYes: om.priceYes,
-            })),
-          });
-          
-          if (data.length === 0) {
-            logger.warn('[LmsrTradingCard] No option markets found for market:', marketId);
-            setError('此市場尚未初始化 LMSR 選項市場，請聯繫管理員');
+      // Use aggregated data if available
+      if (marketDetailData?.marketData) {
+        const { exclusiveMarket: exclusiveMarketData, optionMarkets: optionMarketsData, trades: tradesArray } = marketDetailData.marketData;
+        
+        if (isSingle) {
+          if (exclusiveMarketData) {
+            logger.logWithPrefix('LmsrTradingCard', 'Using aggregated exclusive market data');
+            setExclusiveMarket(exclusiveMarketData);
           } else {
-            setOptionMarkets(data);
+            // 單選題但沒有 exclusiveMarket 數據，設置為 null 表示已加載但沒有數據
+            logger.logWithPrefix('LmsrTradingCard', 'No exclusive market data in aggregated data');
+            setExclusiveMarket(null);
+          }
+        } else {
+          // 非單選題：即使 optionMarketsData 為空數組，也設置它（表示數據已加載但沒有選項）
+          if (optionMarketsData !== undefined) {
+            logger.logWithPrefix('LmsrTradingCard', 'Using aggregated option markets data:', {
+              count: optionMarketsData.length,
+            });
+            setOptionMarkets(optionMarketsData);
+            
             // Auto-select first option market for binary questions if none selected
-            if (isBinary && !selectedOptionMarket && data.length > 0) {
-              setSelectedOptionMarket(data[0].id);
+            if (isBinary && !selectedOptionMarket && optionMarketsData.length > 0) {
+              setSelectedOptionMarket(optionMarketsData[0].id);
             }
             
             // 對於是非題，從交易記錄獲取最新機率
-            if (isBinary) {
-              try {
-                const trades = await getAllTrades(marketId, false);
-                const tradesArray = Array.isArray(trades) ? trades : (trades?.trades || []);
-                if (tradesArray.length > 0) {
-                  // 獲取最後一筆交易
-                  const sortedTrades = [...tradesArray].sort((a, b) => 
-                    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-                  );
-                  const lastTrade = sortedTrades[sortedTrades.length - 1];
-                  if (lastTrade.priceYesAfter) {
-                    const probability = parseFloat(lastTrade.priceYesAfter) * 100;
-                    setCurrentYesProbability(probability);
-                    console.log('[LmsrTradingCard] Set current YES probability from last trade:', probability);
-                  } else if (lastTrade.priceAfter) {
-                    const probability = parseFloat(lastTrade.priceAfter) * 100;
-                    setCurrentYesProbability(probability);
-                    console.log('[LmsrTradingCard] Set current YES probability from last trade (fallback):', probability);
-                  } else {
-                    // 如果沒有交易記錄，使用 option market 的 priceYes
-                    const priceYes = parseFloat(data[0].priceYes || '0.5') * 100;
-                    setCurrentYesProbability(priceYes);
-                    console.log('[LmsrTradingCard] Set current YES probability from option market:', priceYes);
-                  }
-                } else {
-                  // 如果沒有交易記錄，使用 option market 的 priceYes
-                  const priceYes = parseFloat(data[0].priceYes || '0.5') * 100;
-                  setCurrentYesProbability(priceYes);
-                  console.log('[LmsrTradingCard] No trades found, using option market priceYes:', priceYes);
-                }
-              } catch (err) {
-                console.error('[LmsrTradingCard] Failed to load trades for probability:', err);
-                // 使用 option market 的 priceYes 作為後備
-                const priceYes = parseFloat(data[0].priceYes || '0.5') * 100;
+            if (isBinary && tradesArray && tradesArray.length > 0) {
+              const sortedTrades = [...tradesArray].sort((a, b) => 
+                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+              );
+              const lastTrade = sortedTrades[sortedTrades.length - 1];
+              if (lastTrade.priceYesAfter) {
+                const probability = parseFloat(lastTrade.priceYesAfter) * 100;
+                setCurrentYesProbability(probability);
+              } else if (optionMarketsData[0]?.priceYes) {
+                const priceYes = parseFloat(optionMarketsData[0].priceYes) * 100;
                 setCurrentYesProbability(priceYes);
               }
+            } else if (isBinary && optionMarketsData[0]?.priceYes) {
+              const priceYes = parseFloat(optionMarketsData[0].priceYes) * 100;
+              setCurrentYesProbability(priceYes);
             }
+          } else {
+            // 非單選題但沒有 optionMarkets 數據，設置為空數組表示已加載但沒有數據
+            logger.logWithPrefix('LmsrTradingCard', 'No option markets data in aggregated data');
+            setOptionMarkets([]);
           }
-        } catch (err: any) {
-          logger.error('[LmsrTradingCard] Failed to load option markets:', err);
-          setOptionMarkets([]);
-          setError(`無法載入選項市場數據: ${err.message || '未知錯誤'}`);
         }
-        // Don't auto-select any option market - let user choose
+      } else if (!dataLoading) {
+        // Fallback to individual API calls
+        // 單選題使用 exclusive markets，其他（是非題、多選題）使用 option markets
+        if (isSingle) {
+          logger.logWithPrefix('LmsrTradingCard', 'Fetching exclusive market for single choice question');
+          try {
+            const data = await getExclusiveMarketByMarketId(marketId);
+            logger.logWithPrefix('LmsrTradingCard', 'Exclusive market loaded:', {
+              exclusiveMarketId: data.exclusiveMarketId,
+              outcomesCount: data.outcomes.length,
+            });
+            setExclusiveMarket(data);
+          } catch (err: any) {
+            logger.error('[LmsrTradingCard] Failed to load exclusive market:', err);
+            setExclusiveMarket(null);
+            setError(`無法載入單選題市場數據: ${err.message || '未知錯誤'}`);
+          }
+        } else {
+          logger.logWithPrefix('LmsrTradingCard', 'Fetching option markets for', isBinary ? 'YES_NO' : 'MULTIPLE_CHOICE', 'question');
+          try {
+            const data = await getOptionMarketsByMarketId(marketId);
+            logger.logWithPrefix('LmsrTradingCard', 'Option markets loaded:', {
+              count: data.length,
+            });
+            
+            if (data.length === 0) {
+              logger.warn('[LmsrTradingCard] No option markets found for market:', marketId);
+              setError('此市場尚未初始化 LMSR 選項市場，請聯繫管理員');
+            } else {
+              setOptionMarkets(data);
+              if (isBinary && !selectedOptionMarket && data.length > 0) {
+                setSelectedOptionMarket(data[0].id);
+              }
+              
+              if (isBinary) {
+                try {
+                  const trades = await getAllTrades(marketId, false);
+                  const tradesArray = Array.isArray(trades) ? trades : (trades?.trades || []);
+                  if (tradesArray.length > 0) {
+                    const sortedTrades = [...tradesArray].sort((a, b) => 
+                      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                    );
+                    const lastTrade = sortedTrades[sortedTrades.length - 1];
+                    if (lastTrade.priceYesAfter) {
+                      const probability = parseFloat(lastTrade.priceYesAfter) * 100;
+                      setCurrentYesProbability(probability);
+                    } else {
+                      const priceYes = parseFloat(data[0].priceYes || '0.5') * 100;
+                      setCurrentYesProbability(priceYes);
+                    }
+                  } else {
+                    const priceYes = parseFloat(data[0].priceYes || '0.5') * 100;
+                    setCurrentYesProbability(priceYes);
+                  }
+                } catch (err) {
+                  console.error('[LmsrTradingCard] Failed to load trades for probability:', err);
+                  const priceYes = parseFloat(data[0].priceYes || '0.5') * 100;
+                  setCurrentYesProbability(priceYes);
+                }
+              }
+            }
+          } catch (err: any) {
+            logger.error('[LmsrTradingCard] Failed to load option markets:', err);
+            setOptionMarkets([]);
+            setError(`無法載入選項市場數據: ${err.message || '未知錯誤'}`);
+          }
+        }
       }
     } catch (err: any) {
       const errorMessage = err.message || "載入失敗";
@@ -1064,65 +1110,56 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
     }
   };
 
-  if (loading) {
-    return <Card><CardContent className="p-6">載入中...</CardContent></Card>;
-  }
-
   // Don't block UI for quote errors, show them inline
   // if (error && !quote) {
   //   return <Card><CardContent className="p-6 text-red-500">{error}</CardContent></Card>;
   // }
 
   // 對於單選題，檢查 exclusiveMarket；對於其他題型，檢查 optionMarkets
+  // 優先檢查加載狀態，只有在加載完成且確實沒有數據時才顯示錯誤信息
+  
+  // 判斷數據是否已確認加載完成
+  // 只有在以下情況才認為數據已確認加載完成：
+  // 1. hasAttemptedLoad 為 true（已經嘗試過加載）
+  // 2. loading 為 false（本地加載完成）
+  // 3. dataLoading 為 false（聚合數據加載完成）
+  // 4. 並且有明確的數據狀態（有數據或確認沒有數據）
+  // 對於單選題：需要有 exclusiveMarket 數據（有數據）或明確為 null（確認沒有數據）
+  // 對於非單選題：需要有 optionMarkets 數據（有數據）或明確為空數組且 marketDetailData 存在（確認沒有數據）
+  const hasDataForSingle = isSingle && exclusiveMarket !== null && exclusiveMarket.outcomes.length > 0;
+  const hasDataForMultiple = !isSingle && optionMarkets.length > 0;
+  // 確認沒有數據的條件：必須有 marketDetailData 存在（表示聚合數據已返回），且數據確實為空
+  const hasConfirmedNoData = marketDetailData !== undefined && (
+    (isSingle && exclusiveMarket === null) || 
+    (!isSingle && optionMarkets.length === 0)
+  );
+  const isDataConfirmed = hasAttemptedLoad && !loading && !dataLoading && (hasDataForSingle || hasDataForMultiple || hasConfirmedNoData);
+  
+  // 如果還在加載中，或者數據還沒有確認加載完成，都顯示加載狀態（使用 spinner 動畫）
+  if (loading || dataLoading || !hasAttemptedLoad || !isDataConfirmed) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+              <p className="text-sm text-gray-500">載入中...</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // 如果數據已確認加載完成但沒有數據，不顯示錯誤信息，直接返回空內容或隱藏組件
+  // 這樣用戶就不會看到錯誤信息閃爍
   if (isSingle) {
     if (!exclusiveMarket || exclusiveMarket.outcomes.length === 0) {
-      return (
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center space-y-2">
-              <p className="text-red-600 font-semibold">此市場沒有 LMSR 選項</p>
-              {error && (
-                <p className="text-sm text-gray-600">{error}</p>
-              )}
-              <p className="text-xs text-gray-500">
-                市場 ID: {marketId}
-                <br />
-                題型: {questionType}
-                <br />
-                機制: {market?.mechanism || '未設置'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      );
+      return null; // 不顯示任何內容，避免錯誤信息閃爍
     }
   } else {
     if (optionMarkets.length === 0) {
-      return (
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center space-y-2">
-              <p className="text-red-600 font-semibold">此市場沒有 LMSR 選項</p>
-              {error && (
-                <p className="text-sm text-gray-600">{error}</p>
-              )}
-              <p className="text-xs text-gray-500">
-                市場 ID: {marketId}
-                <br />
-                題型: {questionType} {isBinary ? '(是非題)' : '(多選題)'}
-                <br />
-                機制: {market?.mechanism || '未設置'}
-                <br />
-                {!loading && (
-                  <span className="text-orange-600">
-                    ⚠️ 此市場可能尚未初始化 LMSR 選項市場，請聯繫管理員檢查後端配置
-                  </span>
-                )}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      );
+      return null; // 不顯示任何內容，避免錯誤信息閃爍
     }
   }
 
@@ -1135,205 +1172,6 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
     <Card>
       <CardContent className="space-y-4">
 
-        {/* 我的持倉 */}
-        {(() => {
-          if (positionsLoading) {
-            return (
-              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
-                <div className="text-sm text-gray-500 text-center">載入持倉中...</div>
-              </div>
-            );
-          }
-
-          // 檢查是否有持倉（option markets 或 exclusive markets）
-          const hasOptionPositions = positions.length > 0;
-          const hasExclusivePositions = isSingle && exclusivePositions.length > 0;
-          
-          if (!hasOptionPositions && !hasExclusivePositions) {
-            return null;
-          }
-
-          return (
-            <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-950">
-              <div className="text-sm font-semibold mb-3 text-blue-700 dark:text-blue-300">
-                📊 我的持倉
-              </div>
-              <div className="space-y-4">
-                {/* Option Market Positions */}
-                {positions.map((position) => {
-                  const totalCost = parseFloat(position.totalCost);
-                  const currentValue = parseFloat(position.currentValue);
-                  const profitLoss = parseFloat(position.profitLoss);
-                  const profitLossPercent = parseFloat(position.profitLossPercent);
-                  const shares = parseFloat(position.shares);
-                  const probabilityChange = parseFloat(position.probabilityChange);
-                  const currentProbability = parseFloat(position.currentProbability);
-                  
-                  const isProfit = profitLoss >= 0;
-                  
-                  return (
-                    <div key={`${position.positionId}-${position.side}`} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 space-y-3">
-                      {/* 標題：選項名稱和方向 */}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          {/* 對於是非題，不顯示 optionName，只顯示圖標 */}
-                          {!isBinary && (
-                            <div className="font-semibold text-base">{position.optionName}</div>
-                          )}
-                          <div className={`text-xs text-gray-500 flex items-center gap-1 ${isBinary ? '' : 'mt-1'}`}>
-                            {position.side === 'YES' ? (
-                              <Circle className="w-3.5 h-3.5 text-green-600 stroke-[2.5]" />
-                            ) : (
-                              <XIcon className="w-3.5 h-3.5 text-red-600 stroke-[2.5]" />
-                            )}
-                            {position.isBundle && ' • Bundle'}
-                          </div>
-                        </div>
-                        <div className={`text-right ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
-                          <div className="text-lg font-bold">
-                            {isProfit ? '+' : ''}{formatCurrency(profitLoss)}
-                          </div>
-                          <div className="text-xs">
-                            {isProfit ? '+' : ''}{profitLossPercent.toFixed(2)}%
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* 主要資訊：當前價值、投入成本、shares */}
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <div className="text-gray-500 text-xs mb-1">當前價值</div>
-                          <div className="font-semibold">{formatCurrency(currentValue)}</div>
-                        </div>
-                        <div>
-                          <div className="text-gray-500 text-xs mb-1">投入成本</div>
-                          <div className="font-semibold">{formatCurrency(totalCost)}</div>
-                        </div>
-                        <div>
-                          <div className="text-gray-500 text-xs mb-1">持有 Shares</div>
-                          <div className="font-mono font-semibold">{shares.toFixed(4)}</div>
-                        </div>
-                        <div>
-                          <div className="text-gray-500 text-xs mb-1">當前機率</div>
-                          <div className="font-semibold">{currentProbability.toFixed(1)}%</div>
-                        </div>
-                      </div>
-                      
-                      {/* 機率變化 */}
-                      {probabilityChange !== 0 && (
-                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <div className="text-xs text-gray-500">
-                            投入後機率變化：
-                            <span className={`font-semibold ml-1 ${probabilityChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {probabilityChange > 0 ? '+' : ''}{probabilityChange.toFixed(2)}%
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* 一鍵平倉按鈕 */}
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <Button
-                          onClick={() => handleClosePosition(position, false)}
-                          disabled={closingPositionId === position.positionId}
-                          variant="outline"
-                          className="w-full text-sm"
-                          size="sm"
-                        >
-                          {closingPositionId === position.positionId ? '平倉中...' : '一鍵平倉'}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-                
-                {/* Exclusive Market Positions */}
-                {isSingle && exclusivePositions.map((position) => {
-                  const totalCost = parseFloat(position.totalCost);
-                  const currentValue = parseFloat(position.currentValue);
-                  const profitLoss = parseFloat(position.profitLoss);
-                  const profitLossPercent = parseFloat(position.profitLossPercent);
-                  const shares = parseFloat(position.shares);
-                  const probabilityChange = parseFloat(position.probabilityChange);
-                  const currentProbability = parseFloat(position.currentProbability);
-                  
-                  const isProfit = profitLoss >= 0;
-                  
-                  return (
-                    <div key={`${position.positionId}-${position.side}`} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 space-y-3">
-                      {/* 標題：選項名稱和方向 */}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold text-base">{position.optionName}</div>
-                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                            {position.side === 'YES' ? (
-                              <Circle className="w-3.5 h-3.5 text-green-600 stroke-[2.5]" />
-                            ) : (
-                              <XIcon className="w-3.5 h-3.5 text-red-600 stroke-[2.5]" />
-                            )}
-                          </div>
-                        </div>
-                        <div className={`text-right ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
-                          <div className="text-lg font-bold">
-                            {isProfit ? '+' : ''}{formatCurrency(profitLoss)}
-                          </div>
-                          <div className="text-xs">
-                            {isProfit ? '+' : ''}{profitLossPercent.toFixed(2)}%
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* 主要資訊：當前價值、投入成本、shares */}
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <div className="text-gray-500 text-xs mb-1">當前價值</div>
-                          <div className="font-semibold">{formatCurrency(currentValue)}</div>
-                        </div>
-                        <div>
-                          <div className="text-gray-500 text-xs mb-1">投入成本</div>
-                          <div className="font-semibold">{formatCurrency(totalCost)}</div>
-                        </div>
-                        <div>
-                          <div className="text-gray-500 text-xs mb-1">持有 Shares</div>
-                          <div className="font-mono font-semibold">{shares.toFixed(4)}</div>
-                        </div>
-                        <div>
-                          <div className="text-gray-500 text-xs mb-1">當前機率</div>
-                          <div className="font-semibold">{currentProbability.toFixed(1)}%</div>
-                        </div>
-                      </div>
-                      
-                      {/* 機率變化 */}
-                      {probabilityChange !== 0 && (
-                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <div className="text-xs text-gray-500">
-                            投入後機率變化：
-                            <span className={`font-semibold ml-1 ${probabilityChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {probabilityChange > 0 ? '+' : ''}{probabilityChange.toFixed(2)}%
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* 一鍵平倉按鈕 */}
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <Button
-                          onClick={() => handleClosePosition(position, true)}
-                          disabled={closingPositionId === position.positionId}
-                          variant="outline"
-                          className="w-full text-sm"
-                          size="sm"
-                        >
-                          {closingPositionId === position.positionId ? '平倉中...' : '一鍵平倉'}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
 
         {/* Option Markets List - 你的立場是？ */}
         <div className="space-y-3">
@@ -1534,15 +1372,13 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                       className="flex-1 cursor-pointer hover:text-blue-600 transition-colors"
                       onClick={() => {
                         // Toggle option in chart selection
-                        setSelectedOptionsForChart(prev => {
-                          const newSet = new Set(prev);
-                          if (newSet.has(om.id)) {
-                            newSet.delete(om.id);
-                          } else {
-                            newSet.add(om.id);
-                          }
-                          return newSet;
-                        });
+                        const newSet = new Set(selectedOptionsForChart);
+                        if (newSet.has(om.id)) {
+                          newSet.delete(om.id);
+                        } else {
+                          newSet.add(om.id);
+                        }
+                        setSelectedOptionsForChart(newSet);
                       }}
                       title={isInChart ? '點擊移除圖表' : '點擊加入圖表'}
                     >
@@ -1729,25 +1565,6 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
           })}
         </div>
         
-        {/* Multiple Choice Chart - Only show if options are selected */}
-        {isMultiple && selectedOptionsForChart.size > 0 && (
-          <div className="mt-6">
-            <MarketDetailClient marketId={marketId}>
-              <ProbabilityChart 
-                marketId={marketId}
-                isSingle={false}
-                questionType="MULTIPLE_CHOICE"
-                marketOptions={market?.options || []}
-                selectedOptionIds={Array.from(selectedOptionsForChart)}
-                optionMarkets={optionMarkets.map(om => ({
-                  id: om.id,
-                  optionId: om.optionId,
-                  optionName: om.optionName,
-                }))}
-              />
-            </MarketDetailClient>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

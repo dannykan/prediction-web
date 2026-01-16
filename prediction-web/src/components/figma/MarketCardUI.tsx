@@ -18,6 +18,7 @@ import {
   getCachedExclusiveMarket,
 } from '@/features/market/api/cachedLmsr';
 import { logger } from '@/shared/utils/logger';
+import { buildMarketUrl } from '@/features/market/utils/marketUrl';
 
 interface MarketCardUIProps {
   market: Market;
@@ -31,7 +32,7 @@ interface TopOption {
 }
 
 export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
-  const marketUrl = `/m/${market.shortcode}-${market.slug}`;
+  const marketUrl = buildMarketUrl(market.shortcode, market.slug);
   const timeUntilClose = market.closeTime 
     ? formatDistanceToNow(new Date(market.closeTime), { addSuffix: true, locale: zhTW })
     : '';
@@ -227,7 +228,11 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
     e.preventDefault();
     e.stopPropagation();
     // 跳轉到詳情頁
-    const url = `/m/${market.shortcode}-${market.slug}${optionId ? `?option=${optionId}&side=${side}` : ''}`;
+    const url = buildMarketUrl(
+      market.shortcode,
+      market.slug,
+      optionId ? { option: optionId, side: side || '' } : undefined
+    );
     window.location.href = url;
   };
 

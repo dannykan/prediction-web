@@ -15,6 +15,7 @@ import { getCategoriesClient, type Category } from "../api/getCategoriesClient";
 import { uploadMarketImage } from "../api/uploadMarketImage";
 import { createMarket, type MarketOption, type FirstBetSelection } from "../api/createMarket";
 import type { User } from "@/features/user/types/user";
+import { buildMarketUrl } from "../utils/marketUrl";
 
 // Step components (will be created separately)
 import { StepIndicator } from "./CreateQuestionSteps/StepIndicator";
@@ -272,15 +273,8 @@ export function CreateQuestionForm() {
             .replace(/-+/g, "-") // Replace multiple hyphens
             .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
         } else {
-          // Clean existing slug to ensure URL safety
-          slug = slug
-            .replace(/\//g, "-") // Replace forward slashes
-            .replace(/\\/g, "-") // Replace backslashes
-            .replace(/[?#&]/g, "-") // Replace URL-unsafe characters
-            .replace(/-+/g, "-") // Replace multiple hyphens
-            .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
         }
-        router.push(`/m/${result.market.shortcode}-${slug}`);
+        router.push(buildMarketUrl(result.market.shortcode, slug));
       } else {
         // Fallback to home if no shortcode
         router.push("/home");

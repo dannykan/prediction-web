@@ -11,6 +11,7 @@ import {
   getExclusiveMarketByMarketId,
   type ExclusiveMarketInfo,
 } from "../api/lmsr";
+import { buildMarketUrl } from "../utils/marketUrl";
 
 interface MarketCardClientProps {
   market: Market;
@@ -104,7 +105,12 @@ export function MarketCardClient({ market, commentsCount }: MarketCardClientProp
     e.stopPropagation();
     // 跳轉到詳情頁，點擊按鈕時不觸發卡片的 Link
     // TODO: 未來可以實現快速下注功能，跳轉到詳情頁並預選該選項
-    window.location.href = `/m/${market.shortcode}-${market.slug}${optionId ? `?option=${optionId}&side=${side}` : ''}`;
+    const url = buildMarketUrl(
+      market.shortcode,
+      market.slug,
+      optionId ? { option: optionId, side: side || '' } : undefined
+    );
+    window.location.href = url;
   };
 
   const questionType = market.questionType;
@@ -121,7 +127,7 @@ export function MarketCardClient({ market, commentsCount }: MarketCardClientProp
       <div className="flex flex-col md:flex-row">
         {/* Market Image - Clickable */}
         <Link
-          href={`/m/${market.shortcode}-${market.slug}`}
+          href={buildMarketUrl(market.shortcode, market.slug)}
           className="block"
         >
           <MarketImage
@@ -133,7 +139,7 @@ export function MarketCardClient({ market, commentsCount }: MarketCardClientProp
         {/* Market Content */}
         <div className="flex-1 p-3 md:p-6">
           <Link
-            href={`/m/${market.shortcode}-${market.slug}`}
+            href={buildMarketUrl(market.shortcode, market.slug)}
             className="block"
           >
             <h2

@@ -8,6 +8,7 @@ import { HomePageUIClient } from "@/components/figma/HomePageUIClient";
 import { getMeServer } from "@/features/user/api/getMeServer";
 import { getUserStatisticsServer } from "@/features/user/api/getUserStatisticsServer";
 import { getQuestsServer } from "@/features/quest/api/getQuestsServer";
+import { buildMarketUrl } from "@/features/market/utils/marketUrl";
 import { getFollowedMarkets } from "@/features/market/api/getFollowedMarkets";
 import { getAllUserPositionsServer } from "@/features/user/api/getAllUserPositionsServer";
 
@@ -57,7 +58,7 @@ function generateStructuredData(markets: Market[]) {
         "@type": "Question",
         name: market.title,
         description: market.description,
-        url: absUrl(`/m/${market.shortcode}-${market.slug}`),
+        url: absUrl(buildMarketUrl(market.shortcode, market.slug)),
         ...(market.imageUrl && {
           image: market.imageUrl.startsWith("http")
             ? market.imageUrl

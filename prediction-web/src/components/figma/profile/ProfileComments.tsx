@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { UserComment } from '@/features/user/api/getUserComments';
 import { BetIcon } from '@/features/market/components/market-detail/BetIcon';
+import { buildMarketUrl } from '@/features/market/utils/marketUrl';
 
 interface ProfileCommentsProps {
   comments: UserComment[];
@@ -51,7 +52,7 @@ export function ProfileComments({ comments }: ProfileCommentsProps) {
           const userBet = (comment as any).userBet;
           // Generate slug from title if not available (preserves Chinese characters)
           const slug = (comment.market as any).slug || comment.market.title.trim().replace(/\s+/g, "-");
-          const marketUrl = shortcode ? `/m/${shortcode}-${slug}?comment=${comment.id}` : null;
+          const marketUrl = shortcode ? buildMarketUrl(shortcode, slug, { comment: comment.id }) : null;
           
           return (
             <div

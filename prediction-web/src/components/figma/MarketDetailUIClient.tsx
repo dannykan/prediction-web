@@ -9,6 +9,7 @@ import { getUserStatistics } from '@/features/user/api/getUserStatistics';
 import { signInWithGooglePopup } from '@/core/auth/googleSignIn';
 import type { User } from '@/features/user/types/user';
 import { checkFollowStatus, followMarket, unfollowMarket } from '@/features/market/api/followMarket';
+import { getMarketDetailData, type MarketDetailData } from '@/features/market/api/getMarketDetailData';
 
 interface MarketDetailUIClientProps {
   market: Market;
@@ -29,9 +30,55 @@ export function MarketDetailUIClient({
   const [userStatistics, setUserStatistics] = useState<any>(null);
   const [commentsCount, setCommentsCount] = useState(initialCommentsCount);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [marketDetailData, setMarketDetailData] = useState<MarketDetailData | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  // 檢查用戶登入狀態並載入用戶資料
+  // 使用聚合 API 獲取所有市場數據
   useEffect(() => {
+    const loadMarketData = async () => {
+      try {
+        setDataLoading(true);
+        const data = await getMarketDetailData(market.id);
+        setMarketDetailData(data);
+        
+        // 從聚合 API 獲取用戶信息（如果已登錄）
+        if (data.user) {
+          setIsLoggedIn(true);
+          setUser({
+            id: data.user.id,
+            displayName: data.user.displayName,
+            avatarUrl: data.user.avatarUrl,
+          } as User);
+          
+          // 設置用戶統計資料
+          if (data.user.statistics) {
+            setUserStatistics({
+              statistics: data.user.statistics,
+            });
+          }
+          
+          // 設置關注狀態
+          setIsFollowing(data.user.followStatus || false);
+        } else {
+          setIsLoggedIn(false);
+          setUser(null);
+          setUserStatistics(null);
+          setIsFollowing(false);
+        }
+      } catch (error) {
+        console.error('[MarketDetailUIClient] Failed to load market detail data:', error);
+        // 如果聚合 API 失敗，回退到舊的方式
+        loadUserDataFallback();
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    loadMarketData();
+  }, [market.id]);
+
+  // 回退方案：如果聚合 API 失敗，使用舊的方式獲取用戶數據
+  const loadUserDataFallback = async () => {
     getMe()
       .then(async (userData) => {
         if (userData) {
@@ -48,7 +95,6 @@ export function MarketDetailUIClient({
             }
           }
         } else {
-          // 用戶未登入
           setIsLoggedIn(false);
           setUser(null);
           setUserStatistics(null);
@@ -59,26 +105,25 @@ export function MarketDetailUIClient({
         setUser(null);
         setUserStatistics(null);
       });
-  }, []);
+  };
 
-  // 檢查關注狀態
+  // 檢查關注狀態（如果聚合 API 沒有返回）
   useEffect(() => {
     async function fetchFollowStatus() {
-      if (user?.id) {
+      if (user?.id && !marketDetailData?.user?.followStatus) {
         try {
           const status = await checkFollowStatus(market.id, user.id);
           setIsFollowing(status.isFollowed);
         } catch (error) {
           console.error('[MarketDetailUIClient] Failed to check follow status:', error);
-          // 如果檢查失敗，保持默認狀態（false）
         }
       }
     }
 
-    if (user?.id) {
+    if (user?.id && !marketDetailData?.user?.followStatus) {
       fetchFollowStatus();
     }
-  }, [market.id, user?.id]);
+  }, [market.id, user?.id, marketDetailData?.user?.followStatus]);
 
   const handleLogin = async () => {
     try {
@@ -181,6 +226,8 @@ export function MarketDetailUIClient({
       isFollowing={isFollowing}
       commentId={commentId}
       onCommentsCountChange={setCommentsCount}
+      marketDetailData={marketDetailData}
+      dataLoading={dataLoading}
     />
   );
 }

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getMarkets } from "@/features/market/api/getMarkets";
 import { PageLayout } from "@/shared/components/layouts/PageLayout";
 import Link from "next/link";
+import { buildMarketUrl } from "@/features/market/utils/marketUrl";
 
 export const revalidate = 60;
 
@@ -44,7 +45,7 @@ export default async function TagPage({ params }: TagPageProps) {
       <div className="space-y-3 md:space-y-4">
         {filteredMarkets.map((market) => (
           <div key={market.id} className="border p-3 md:p-4 rounded bg-white dark:bg-gray-800">
-            <Link href={`/m/${market.shortcode}-${market.slug}`} className="hover:underline">
+            <Link href={buildMarketUrl(market.shortcode, market.slug)} className="hover:underline">
               <h2 className="font-bold text-base md:text-lg">{market.title}</h2>
             </Link>
             <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">{market.description}</p>
