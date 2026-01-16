@@ -6,6 +6,7 @@ import { MarketDetailUIClient } from "@/components/figma/MarketDetailUIClient";
 import { absUrl } from "@/shared/utils/seo";
 import { truncateText } from "@/shared/utils/format";
 import { getCommentsCount } from "@/features/comment/api/getCommentsCount";
+import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 
 export const revalidate = 60;
 
@@ -46,21 +47,34 @@ export async function generateMetadata({ params }: MarketPageProps): Promise<Met
     }
     
     // 如果是相對 URL，需要添加 API base URL（因為圖片存儲在後端）
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-    if (apiBaseUrl && apiBaseUrl !== 'https://example.com') {
+    try {
+      const apiBaseUrl = getApiBaseUrl();
       // 確保 URL 以 / 開頭
       const imagePath = market.imageUrl.startsWith('/') ? market.imageUrl : `/${market.imageUrl}`;
-      return `${apiBaseUrl}${imagePath}`;
+      // 確保 API base URL 不以 / 結尾
+      const cleanApiBaseUrl = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
+      return `${cleanApiBaseUrl}${imagePath}`;
+    } catch (error) {
+      // 如果無法獲取 API base URL，記錄錯誤並使用 site URL（可能不正確，但至少不會出錯）
+      console.error('[generateMetadata] Failed to get API base URL:', error);
+      return absUrl(market.imageUrl.startsWith('/') ? market.imageUrl : `/${market.imageUrl}`);
     }
-    
-    // 如果沒有配置 API base URL，嘗試使用 site URL（可能不正確，但至少不會出錯）
-    return absUrl(market.imageUrl.startsWith('/') ? market.imageUrl : `/${market.imageUrl}`);
   };
   
   const ogImageUrl = getOgImageUrl();
   
   // 確保 URL 是絕對路徑，Facebook 需要完整的 URL
   const absoluteUrl = canonicalUrl;
+  
+  // Debug: 在開發環境中記錄圖片 URL
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[generateMetadata] Market OG Image URL:', {
+      marketId: market.id,
+      imageUrl: market.imageUrl,
+      ogImageUrl,
+      canonicalUrl: absoluteUrl,
+    });
+  }
 
   return {
     title: `${market.title} - 神預測 Prediction God`,
