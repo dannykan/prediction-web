@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import { Trophy, Crown, Medal, Award, Skull, Coins, TrendingUp, Minus } from 'lucide-react';
 import type { LeaderboardEntry } from '@/features/leaderboard/types/leaderboard';
 import { GCoinIcon } from '@/components/GCoinIcon';
@@ -259,9 +260,11 @@ export function LeaderboardUI({
 
                     {/* User Avatar */}
                     {entry.avatarUrl && entry.avatarUrl.trim() !== '' ? (
-                      <img
+                      <Image
                         src={entry.avatarUrl}
                         alt={entry.displayName || 'User'}
+                        width={40}
+                        height={40}
                         className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0 object-cover"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';

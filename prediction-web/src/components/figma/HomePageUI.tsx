@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
+import { Virtuoso } from 'react-virtuoso';
 import { TrendingUp, Clock, Star, CheckCircle, Timer } from 'lucide-react';
 import { SearchBar } from './SearchBar';
 import { PullToRefresh } from './PullToRefresh';
@@ -335,14 +336,37 @@ export function HomePageUI({
             isLoggedIn={isLoggedIn}
           />
 
-          {/* Market List */}
+          {/* Market List - Virtualized for performance with large lists */}
           <div className="mt-3 sm:mt-4 w-full max-w-4xl mx-auto">
             {filteredMarkets.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-slate-400 text-lg">沒有找到相關市場</p>
                 <p className="text-slate-300 mt-2">試試其他搜尋條件或分類</p>
               </div>
+            ) : filteredMarkets.length > 50 ? (
+              // Use virtual scrolling for lists with more than 50 items
+              <div className="w-full" style={{ height: 'calc(100vh - 300px)', minHeight: '400px' }}>
+                <Virtuoso
+                  totalCount={filteredMarkets.length}
+                  itemContent={(index) => {
+                    const market = filteredMarkets[index];
+                    const commentsCount = commentsCountMap.get(market.id) || 0;
+                    return (
+                      <div className="mb-3 sm:mb-4 px-2">
+                        <MarketCardUI 
+                          key={market.id} 
+                          market={market}
+                          commentsCount={commentsCount}
+                        />
+                      </div>
+                    );
+                  }}
+                  style={{ height: '100%' }}
+                  overscan={5} // Render 5 extra items above/below viewport for smooth scrolling
+                />
+              </div>
             ) : (
+              // Regular rendering for smaller lists (better for SEO and initial render)
               <div className="space-y-3 sm:space-y-4 w-full">
                 {filteredMarkets.map(market => {
                   const commentsCount = commentsCountMap.get(market.id) || 0;

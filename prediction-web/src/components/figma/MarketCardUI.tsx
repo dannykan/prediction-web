@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import Link from "next/link";
+import Image from 'next/image';
 import { MessageCircle, BarChart3, Clock, Circle, X as XIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
@@ -31,7 +32,7 @@ interface TopOption {
   yesProbability: number;
 }
 
-export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
+function MarketCardUIComponent({ market, commentsCount = 0 }: MarketCardUIProps) {
   const marketUrl = buildMarketUrl(market.shortcode, market.slug);
   const timeUntilClose = market.closeTime 
     ? formatDistanceToNow(new Date(market.closeTime), { addSuffix: true, locale: zhTW })
@@ -245,10 +246,13 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
             {/* Image - Square on left */}
             <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
               <div className="w-full h-full rounded-lg overflow-hidden relative">
-                <img 
+                <Image 
                   src={marketImage}
                   alt={market.title}
+                  width={96}
+                  height={96}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
                 />
                 <div className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5">
                   <span className="px-1.5 py-0.5 sm:px-2 bg-indigo-600 text-white text-[10px] sm:text-xs font-medium rounded">
@@ -268,9 +272,11 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
               {/* Meta Info */}
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-slate-500 mb-2">
                 <div className="flex items-center gap-1">
-                  <img 
+                  <Image 
                     src={creatorAvatar}
                     alt={creatorName}
+                    width={16}
+                    height={16}
                     className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                   />
                   <span className="truncate max-w-[60px] sm:max-w-[80px]">{creatorName}</span>
@@ -294,9 +300,11 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
               {/* Volume - More compact */}
               <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-600 mb-2">
                 <BarChart3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-                <img 
+                <Image 
                   src="/images/G_coin_icon.png" 
                   alt="G coin" 
+                  width={14}
+                  height={14}
                   className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0"
                 />
                 <span className="font-bold">{formatCurrency(market.totalVolume || 0)}</span>
@@ -384,3 +392,15 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
     </Link>
   );
 }
+
+// Export memoized component with custom comparison
+export const MarketCardUI = memo(MarketCardUIComponent, (prevProps: MarketCardUIProps, nextProps: MarketCardUIProps) => {
+  // Only re-render if market ID or commentsCount changes
+  // This prevents unnecessary re-renders when parent component updates
+  return (
+    prevProps.market.id === nextProps.market.id &&
+    prevProps.commentsCount === nextProps.commentsCount &&
+    prevProps.market.totalVolume === nextProps.market.totalVolume &&
+    prevProps.market.updatedAt === nextProps.market.updatedAt
+  );
+});

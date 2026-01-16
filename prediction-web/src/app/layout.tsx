@@ -6,11 +6,15 @@ import { GoogleOneTapInitializer } from "@/components/GoogleOneTapInitializer";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap", // Optimize font loading: show fallback immediately, swap when font loads
+  preload: true, // Preload font for better performance
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -44,8 +48,23 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Get API base URL for preconnect (if available)
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
   return (
     <html lang="zh-TW">
+      <head>
+        {/* Preconnect to API for faster requests */}
+        {apiBaseUrl && (
+          <>
+            <link rel="preconnect" href={apiBaseUrl} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={apiBaseUrl} />
+          </>
+        )}
+        
+        {/* Preload critical resources */}
+        <link rel="preload" href="/images/logo.png" as="image" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <GoogleOneTapInitializer />
         {children}

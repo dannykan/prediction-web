@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, BarChart3, Clock, Users, MessageCircle, Share2, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,13 +11,28 @@ import type { Market } from '@/features/market/types/market';
 import { LmsrTradingCard } from '@/features/market/components/LmsrTradingCard';
 import { ProbabilityChart } from '@/features/market/components/ProbabilityChart';
 import { MyPosition } from '@/features/market/components/MyPosition';
-import { CommentsSection } from '@/features/comment/components/CommentsSection';
-import { TradeHistorySection } from '@/features/market/components/TradeHistorySection';
 import { SidebarUI } from './SidebarUI';
 import { MobileHeaderUI } from './MobileHeaderUI';
 import { PullToRefresh } from './PullToRefresh';
 import { MarketDetailClient } from '@/features/market/components/MarketDetailClient';
 import type { MarketDetailData } from '@/features/market/api/getMarketDetailData';
+
+// Lazy load non-critical components for better initial page load
+const CommentsSection = dynamic(
+  () => import('@/features/comment/components/CommentsSection').then(mod => ({ default: mod.CommentsSection })),
+  {
+    loading: () => <div className="p-4 text-center text-slate-500">載入評論中...</div>,
+    ssr: true, // Keep SSR for SEO
+  }
+);
+
+const TradeHistorySection = dynamic(
+  () => import('@/features/market/components/TradeHistorySection').then(mod => ({ default: mod.TradeHistorySection })),
+  {
+    loading: () => <div className="p-4 text-center text-slate-500">載入交易記錄中...</div>,
+    ssr: true, // Keep SSR for SEO
+  }
+);
 
 interface MarketDetailUIProps {
   market: Market;
@@ -192,11 +208,13 @@ export function MarketDetailUI({
 
               {/* Image */}
               {marketImage && (
-                <div className="w-full h-48 md:h-64 rounded-lg overflow-hidden mb-4">
-                  <img
+                <div className="w-full h-48 md:h-64 rounded-lg overflow-hidden mb-4 relative">
+                  <Image
                     src={marketImage}
                     alt={market.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    priority
                   />
                 </div>
               )}

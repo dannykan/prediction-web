@@ -8,6 +8,39 @@ import { truncateText } from "@/shared/utils/format";
 import { getCommentsCount } from "@/features/comment/api/getCommentsCount";
 import { getApiBaseUrl } from "@/core/api/getApiBaseUrl";
 import { buildMarketUrl } from "@/features/market/utils/marketUrl";
+import type { Market } from "@/features/market/types/market";
+
+/**
+ * Generate breadcrumb structured data (JSON-LD) for SEO
+ */
+function generateBreadcrumbStructuredData(market: Market) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "首頁",
+        item: absUrl("/home"),
+      },
+      ...(market.category ? [
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: market.category.name,
+          item: absUrl(`/home?categoryId=${market.category.id}`),
+        },
+      ] : []),
+      {
+        "@type": "ListItem",
+        position: market.category ? 3 : 2,
+        name: market.title,
+        item: absUrl(buildMarketUrl(market.shortcode, market.slug)),
+      },
+    ],
+  };
+}
 
 export const revalidate = 60;
 
@@ -173,11 +206,43 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
     commentsCount = 0;
   }
 
+  // Generate breadcrumb structured data for SEO
+  const breadcrumbData = generateBreadcrumbStructuredData(market);
+
+  // Get API base URL for preconnect
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+  const marketImageUrl = market.imageUrl;
+
   return (
-    <MarketDetailUIClient
-      market={market}
-      commentId={commentId}
-      initialCommentsCount={commentsCount}
-    />
+    <>
+      {/* Resource Hints for Performance */}
+      {apiBaseUrl && (
+        <>
+          <link rel="preconnect" href={apiBaseUrl} crossOrigin="anonymous" />
+          <link rel="dns-prefetch" href={apiBaseUrl} />
+        </>
+      )}
+      
+      {/* Preload market image if available */}
+      {marketImageUrl && (
+        <link
+          rel="preload"
+          href={marketImageUrl.startsWith('http') ? marketImageUrl : `${apiBaseUrl}${marketImageUrl.startsWith('/') ? marketImageUrl : `/${marketImageUrl}`}`}
+          as="image"
+        />
+      )}
+      
+      {/* Breadcrumb Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData) }}
+      />
+      
+      <MarketDetailUIClient
+        market={market}
+        commentId={commentId}
+        initialCommentsCount={commentsCount}
+      />
+    </>
   );
 }

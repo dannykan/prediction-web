@@ -10,6 +10,7 @@ import { getAllUserPositions } from '@/features/user/api/getAllUserPositions';
 import { getUserStatistics } from '@/features/user/api/getUserStatistics';
 import { getQuests } from '@/features/quests/api/getQuests';
 import { getUnreadCount } from '@/features/notification/api/getUnreadCount';
+import { getHomeDataClient } from '@/features/market/api/getHomeDataClient';
 import { createNotification } from '@/features/notification/api/createNotification';
 import { signInWithGooglePopup } from '@/core/auth/googleSignIn';
 import { useReferralCodeFromUrl } from '@/features/referrals/hooks/useReferralCodeFromUrl';
@@ -26,6 +27,25 @@ interface HomePageUIClientProps {
   initialCategoryId?: string;
   initialCategoryName?: string;
   initialFilter?: string;
+  // Aggregated data from server (to avoid duplicate API calls)
+  initialUser?: {
+    id: string;
+    email: string;
+    displayName: string;
+    avatarUrl: string | null;
+    coinBalance: number;
+    isVip: boolean;
+    rank: {
+      level: number;
+      name: string;
+      title: string;
+      totalTurnover: number;
+    };
+    rankLevel: number;
+  } | null;
+  initialUserStatistics?: any | null;
+  initialQuests?: any | null;
+  initialUnreadNotificationsCount?: number;
 }
 
 export function HomePageUIClient({
@@ -36,6 +56,10 @@ export function HomePageUIClient({
   initialCategoryId,
   initialCategoryName,
   initialFilter = 'all',
+  initialUser = null,
+  initialUserStatistics = null,
+  initialQuests = null,
+  initialUnreadNotificationsCount = 0,
 }: HomePageUIClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,15 +80,27 @@ export function HomePageUIClient({
   
   const [selectedFilter, setSelectedFilter] = useState(filterNameMap[initialFilter] || '熱門');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [userStatistics, setUserStatistics] = useState<any>(null);
-  const [quests, setQuests] = useState<any>(null);
-  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  // Use initial data if provided, otherwise fetch
+  const [isLoggedIn, setIsLoggedIn] = useState(!!initialUser);
+  const [user, setUser] = useState<User | null>(initialUser ? {
+    ...initialUser,
+    // Map to User type if needed
+  } as User : null);
+  const [userStatistics, setUserStatistics] = useState<any>(initialUserStatistics);
+  const [quests, setQuests] = useState<any>(initialQuests);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(initialUnreadNotificationsCount);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const pendingRequestRef = useRef<Promise<void> | null>(null);
+  
+  // Simple client-side cache for home data (5 minutes TTL)
+  const cacheRef = useRef<{
+    data: any;
+    timestamp: number;
+    key: string;
+  } | null>(null);
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   // Handle referral code from URL
   const { getPendingReferralCode, clearPendingReferralCode } = useReferralCodeFromUrl();
@@ -113,7 +149,25 @@ export function HomePageUIClient({
   };
 
   // 檢查用戶登入狀態並載入用戶資料
+  // Only fetch if initial data is not provided (to avoid duplicate requests)
   useEffect(() => {
+    // If we already have initial user data, skip fetching
+    if (initialUser) {
+      setIsLoggedIn(true);
+      // Check if user hasn't used a referral code yet and there's a pending one
+      if (initialUser.id && !user?.referredBy) {
+        applyPendingReferralCode(initialUser.id).then(async () => {
+          // Refresh user data after applying referral code
+          const updatedUser = await getMe();
+          if (updatedUser) {
+            setUser(updatedUser);
+          }
+        });
+      }
+      return;
+    }
+
+    // Otherwise, fetch user data
     getMe()
       .then(async (userData) => {
         if (userData) {
@@ -130,8 +184,8 @@ export function HomePageUIClient({
             }
           }
           
-          // 載入用戶統計資料、任務和未讀通知計數
-          if (userData.id) {
+          // 載入用戶統計資料、任務和未讀通知計數（only if not provided initially）
+          if (userData.id && !initialUserStatistics && !initialQuests) {
             try {
               const [stats, questsData, unreadCount] = await Promise.all([
                 getUserStatistics(userData.id),
@@ -402,128 +456,64 @@ export function HomePageUIClient({
       }
       
       try {
-        let fetchedMarkets: Market[] = [];
+        // Check cache first
+        const cacheKey = `${filter}-${search || ''}-${categoryId || ''}`;
+        const now = Date.now();
+        const cached = cacheRef.current;
         
-        if (filter === 'followed' && user?.id) {
-          // Fetch followed markets (with search filter if provided)
-          const queryParams = new URLSearchParams();
-          if (search) queryParams.append('search', search);
-          if (categoryId) queryParams.append('categoryId', categoryId);
-          
-          const response = await fetch(`/api/users/${encodeURIComponent(user.id)}/markets/followed${queryParams.toString() ? `?${queryParams.toString()}` : ''}`, {
-            method: 'GET',
-            credentials: 'include',
-            cache: 'no-store',
-            signal: abortController.signal,
-          });
-          
-          // 檢查請求是否被取消
-          if (abortController.signal.aborted) {
-            return;
-          }
-          
-          if (response.ok) {
-            const data = await response.json();
-            fetchedMarkets = Array.isArray(data) ? data.map(normalizeMarket) : [];
-            
-            // Apply search filter client-side if backend doesn't support it
-            if (search && fetchedMarkets.length > 0) {
-              const searchLower = search.toLowerCase();
-              fetchedMarkets = fetchedMarkets.filter(market => 
-                market.title.toLowerCase().includes(searchLower) ||
-                market.description?.toLowerCase().includes(searchLower)
-              );
-            }
-          }
-        } else if (filter === 'myBets' && user?.id) {
-          // Fetch markets where user has positions
-          const [positionsResponse, marketsResponse] = await Promise.all([
-            fetch(`/api/users/${encodeURIComponent(user.id)}/positions`, {
-              method: 'GET',
-              credentials: 'include',
-              cache: 'no-store',
-              signal: abortController.signal,
-            }),
-            fetch(`/api/markets?status=OPEN${search ? `&search=${encodeURIComponent(search)}` : ''}${categoryId ? `&categoryId=${encodeURIComponent(categoryId)}` : ''}`, {
-              method: 'GET',
-              credentials: 'include',
-              cache: 'no-store',
-              signal: abortController.signal,
-            }),
-          ]);
-          
-          // 檢查請求是否被取消
-          if (abortController.signal.aborted) {
-            return;
-          }
-          
-          if (positionsResponse.ok && marketsResponse.ok) {
-            const positions = await positionsResponse.json();
-            const allMarketsData = await marketsResponse.json();
-            const allMarkets = Array.isArray(allMarketsData) ? allMarketsData.map(normalizeMarket) : [];
-            const marketIds = Array.from(new Set(positions.map((p: any) => p.marketId)));
-            
-            fetchedMarkets = allMarkets.filter((m: Market) => marketIds.includes(m.id));
-            
-            // Sort by last trade time
-            fetchedMarkets = fetchedMarkets.sort((a, b) => {
-              const posA = positions.find((p: any) => p.marketId === a.id);
-              const posB = positions.find((p: any) => p.marketId === b.id);
-              if (!posA || !posB) return 0;
-              const dateA = new Date(posA.lastTradeAt).getTime();
-              const dateB = new Date(posB.lastTradeAt).getTime();
-              return dateB - dateA;
-            });
-          }
+        let homeData;
+        if (
+          cached &&
+          cached.key === cacheKey &&
+          (now - cached.timestamp) < CACHE_TTL
+        ) {
+          // Use cached data
+          logger.logWithPrefix('HomePageUIClient', 'Using cached data for:', cacheKey);
+          homeData = cached.data;
         } else {
-          // Fetch all markets with filters
-          const queryParams = new URLSearchParams();
-          queryParams.append('status', 'OPEN');
-          if (search) queryParams.append('search', search);
-          if (categoryId) queryParams.append('categoryId', categoryId);
-          
-          const response = await fetch(`/api/markets?${queryParams.toString()}`, {
-            method: 'GET',
-            credentials: 'include',
-            cache: 'no-store',
-            signal: abortController.signal,
+          // Fetch fresh data
+          homeData = await getHomeDataClient({
+            filter: filter as 'all' | 'latest' | 'closingSoon' | 'followed' | 'myBets',
+            search,
+            categoryId,
           });
           
-          // 檢查請求是否被取消
-          if (abortController.signal.aborted) {
-            return;
-          }
-          
-          if (response.ok) {
-            const data = await response.json();
-            fetchedMarkets = Array.isArray(data) ? data.map(normalizeMarket) : [];
-            
-            // Apply sorting based on filter
-            if (filter === 'all') {
-              // Sort by total volume (highest first) - 熱門
-              fetchedMarkets = fetchedMarkets.sort((a, b) => {
-                const volumeA = a.totalVolume || 0;
-                const volumeB = b.totalVolume || 0;
-                return volumeB - volumeA;
-              });
-            } else if (filter === 'latest') {
-              // Sort by created date (newest first) - 最新
-              fetchedMarkets = fetchedMarkets.sort((a, b) => {
-                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                return dateB - dateA;
-              });
-            } else if (filter === 'closingSoon') {
-              // Filter and sort by closing time (soonest first) - 倒數中
-              fetchedMarkets = fetchedMarkets
-                .filter(market => market.closeTime && new Date(market.closeTime) > new Date())
-                .sort((a, b) => {
-                  const dateA = a.closeTime ? new Date(a.closeTime).getTime() : Infinity;
-                  const dateB = b.closeTime ? new Date(b.closeTime).getTime() : Infinity;
-                  return dateA - dateB;
-                });
-            }
-          }
+          // Update cache
+          cacheRef.current = {
+            data: homeData,
+            timestamp: now,
+            key: cacheKey,
+          };
+        }
+        
+        // 檢查請求是否被取消
+        if (abortController.signal.aborted) {
+          return;
+        }
+        
+        // Update markets based on filter
+        let fetchedMarkets: Market[] = [];
+        if (filter === 'followed') {
+          fetchedMarkets = homeData.followedMarkets;
+        } else if (filter === 'myBets') {
+          fetchedMarkets = homeData.marketsWithPositions;
+        } else {
+          fetchedMarkets = homeData.markets;
+        }
+        
+        // Update user data if available (for refresh scenarios)
+        if (homeData.user && !initialUser) {
+          setUser(homeData.user as User);
+          setIsLoggedIn(true);
+        }
+        if (homeData.userStatistics && !initialUserStatistics) {
+          setUserStatistics(homeData.userStatistics);
+        }
+        if (homeData.quests && !initialQuests) {
+          setQuests(homeData.quests);
+        }
+        if (homeData.unreadNotificationsCount !== undefined && initialUnreadNotificationsCount === 0) {
+          setUnreadNotificationsCount(homeData.unreadNotificationsCount);
         }
         
         // 再次檢查請求是否被取消（在異步操作完成後）
