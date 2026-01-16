@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { TrendingUp, Clock, Star, CheckCircle, Timer } from 'lucide-react';
 import { SearchBar } from './SearchBar';
 import { PullToRefresh } from './PullToRefresh';
@@ -135,10 +136,89 @@ export function HomePageUI({
   unclaimedQuestsCount = 0,
   unreadNotificationsCount = 0,
 }: HomePageUIProps) {
+  const pathname = usePathname();
   const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const [internalSelectedCategory, setInternalSelectedCategory] = useState('全部');
   const [internalSelectedFilter, setInternalSelectedFilter] = useState('熱門');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Touch gesture detection for mobile swipe to open sidebar
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const isHomePage = pathname === '/home' || pathname === '/';
+  
+  useEffect(() => {
+    // Only enable swipe gesture on mobile and home page
+    if (!isHomePage || typeof window === 'undefined') return;
+    
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    if (!isMobile) return;
+    
+    const EDGE_THRESHOLD = 20; // Pixels from left edge to trigger swipe
+    const MIN_SWIPE_DISTANCE = 50; // Minimum horizontal distance for swipe
+    const MAX_VERTICAL_DISTANCE = 100; // Maximum vertical movement allowed
+    const MAX_SWIPE_TIME = 500; // Maximum time for swipe in ms
+    
+    const handleTouchStart = (e: TouchEvent) => {
+      // Only handle touches starting from the left edge
+      const touch = e.touches[0];
+      if (touch.clientX <= EDGE_THRESHOLD && !sidebarOpen) {
+        touchStartRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+          time: Date.now(),
+        };
+      }
+    };
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchStartRef.current) return;
+      
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartRef.current.x;
+      const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+      
+      // If swiping right and vertical movement is minimal, prevent default
+      if (deltaX > 0 && deltaY < MAX_VERTICAL_DISTANCE) {
+        // Prevent browser's back navigation gesture
+        e.preventDefault();
+      }
+    };
+    
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!touchStartRef.current) return;
+      
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStartRef.current.x;
+      const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+      const deltaTime = Date.now() - touchStartRef.current.time;
+      
+      // Check if it's a valid right swipe
+      if (
+        deltaX >= MIN_SWIPE_DISTANCE &&
+        deltaY < MAX_VERTICAL_DISTANCE &&
+        deltaTime < MAX_SWIPE_TIME &&
+        !sidebarOpen
+      ) {
+        // Open sidebar
+        setSidebarOpen(true);
+        // Prevent any default browser behavior
+        e.preventDefault();
+      }
+      
+      touchStartRef.current = null;
+    };
+    
+    // Add touch event listeners to document
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isHomePage, sidebarOpen]);
   
   // 使用外部狀態或內部狀態
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery;
