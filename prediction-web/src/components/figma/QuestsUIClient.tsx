@@ -48,8 +48,18 @@ export function QuestsUIClient() {
         setIsLoggedIn(true);
 
         // Fetch quests, statistics, and unread notifications count in parallel
+        // Add error handling for each API call to prevent infinite loading
         const [questsData, stats, unreadCount] = await Promise.all([
-          getQuests(userData.id),
+          getQuests(userData.id).catch((err) => {
+            console.error('[QuestsUIClient] Failed to load quests:', err);
+            // Return a default empty quests structure to prevent infinite loading
+            return {
+              dailyQuests: [],
+              weeklyQuests: [],
+              canClaimCompletionBonus: false,
+              completionBonusClaimed: false,
+            } as QuestsResponse;
+          }),
           getUserStatistics(userData.id).catch((err) => {
             console.error('[QuestsUIClient] Failed to load user statistics:', err);
             return null;
@@ -64,7 +74,8 @@ export function QuestsUIClient() {
         setUnreadNotificationsCount(unreadCount);
       } catch (error) {
         console.error("Failed to fetch data:", error);
-        router.push("/");
+        // Don't redirect on error, just show empty state
+        // router.push("/");
       } finally {
         setIsLoading(false);
       }
