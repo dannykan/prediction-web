@@ -7,13 +7,16 @@ import { formatDistanceToNow } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import type { Market } from '@/features/market/types/market';
 import { formatCurrency } from '@/shared/utils/format';
-import { 
-  getOptionMarketsByMarketId, 
+import {
   type OptionMarketInfo,
-  getExclusiveMarketByMarketId,
   type ExclusiveMarketInfo,
 } from '@/features/market/api/lmsr';
 import { getAllTrades } from '@/features/market/api/getAllTrades';
+import {
+  getCachedOptionMarkets,
+  getCachedAllTrades,
+  getCachedExclusiveMarket,
+} from '@/features/market/api/cachedLmsr';
 import { logger } from '@/shared/utils/logger';
 
 interface MarketCardUIProps {
@@ -51,8 +54,8 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
           // 對於 LMSR 機制，從最後一筆交易的 priceYesAfter 獲取
           if (market.mechanism === 'LMSR_V2') {
             try {
-              // 先獲取交易記錄
-              const trades = await getAllTrades(market.id, false);
+              // 先獲取交易記錄（使用帶緩存的版本）
+              const trades = await getCachedAllTrades(market.id, false);
               const tradesArray = Array.isArray(trades) ? trades : (trades?.trades || []);
               
               if (tradesArray.length > 0) {
@@ -74,7 +77,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
                   // 如果交易記錄沒有 priceYesAfter，使用 option markets 的 priceYes
                   // 但只在確認是 YES_NO 類型時才查找 option markets
                   try {
-                    const optionMarkets = await getOptionMarketsByMarketId(market.id);
+                    const optionMarkets = await getCachedOptionMarkets(market.id);
                     if (optionMarkets && optionMarkets.length > 0) {
                       const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
                       setYesProbability(priceYes);
@@ -92,7 +95,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
                 // 如果沒有交易記錄，使用 option markets 的 priceYes
                 // 但只在確認是 YES_NO 類型時才查找 option markets
                 try {
-                  const optionMarkets = await getOptionMarketsByMarketId(market.id);
+                  const optionMarkets = await getCachedOptionMarkets(market.id);
                   if (optionMarkets && optionMarkets.length > 0) {
                     const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
                     setYesProbability(priceYes);
@@ -110,7 +113,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
               console.error(`[MarketCardUI] Error fetching trades for YES_NO market ${market.id}:`, error);
               // 嘗試使用 option markets 作為後備
               try {
-                const optionMarkets = await getOptionMarketsByMarketId(market.id);
+                const optionMarkets = await getCachedOptionMarkets(market.id);
                 if (optionMarkets && optionMarkets.length > 0) {
                   const priceYes = parseFloat(optionMarkets[0].priceYes || '0.5') * 100;
                   setYesProbability(priceYes);
@@ -126,7 +129,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
             // 非 LMSR 機制，可以使用 normalizeMarket 計算的機率
             // 但為了保持一致性，也嘗試從 option markets 獲取
             try {
-              const optionMarkets = await getOptionMarketsByMarketId(market.id);
+              const optionMarkets = await getCachedOptionMarkets(market.id);
               if (optionMarkets && optionMarkets.length > 0) {
                 const firstOption = optionMarkets[0];
                 const priceYes = parseFloat(firstOption.priceYes || '0.5');
@@ -149,7 +152,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
         } else if (questionType === 'SINGLE_CHOICE') {
           // 單選題: 從 exclusive market 獲取前兩高的機率
           try {
-            const exclusiveMarket = await getExclusiveMarketByMarketId(market.id);
+            const exclusiveMarket = await getCachedExclusiveMarket(market.id);
             if (exclusiveMarket && exclusiveMarket.outcomes && exclusiveMarket.outcomes.length > 0) {
               // 過濾掉 NONE 類型的 outcome
               const validOutcomes = exclusiveMarket.outcomes
@@ -176,7 +179,7 @@ export function MarketCardUI({ market, commentsCount = 0 }: MarketCardUIProps) {
           }
         } else if (questionType === 'MULTIPLE_CHOICE') {
           // 多選題: 從 option markets 獲取前兩高的 Yes 機率
-          const optionMarkets = await getOptionMarketsByMarketId(market.id);
+          const optionMarkets = await getCachedOptionMarkets(market.id);
           if (optionMarkets.length > 0) {
             const optionsWithProb = optionMarkets
               .map(om => ({
