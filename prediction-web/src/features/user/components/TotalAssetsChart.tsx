@@ -11,7 +11,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { getUserTransactions, type Transaction } from "../api/getUserTransactions";
-import { getUserStatistics } from "../api/getUserStatistics";
 
 interface TotalAssetsChartProps {
   userId: string;
@@ -34,21 +33,6 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>("week");
-  const [currentPending, setCurrentPending] = useState<number>(0); // Current pending bets
-
-  // Get current pending amount from statistics
-  useEffect(() => {
-    async function loadPending() {
-      try {
-        const stats = await getUserStatistics(userId);
-        const pending = stats?.statistics?.profitRate?.total?.totalPending || 0;
-        setCurrentPending(pending);
-      } catch (error) {
-        console.error("[TotalAssetsChart] Failed to load pending:", error);
-      }
-    }
-    loadPending();
-  }, [userId]);
 
   // Calculate date range based on timeRange
   const getDateRange = (range: TimeRange, registrationDate: Date): { start: Date; end: Date } => {
@@ -209,8 +193,8 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
     // 1. There's no transaction on the start date (need to show the starting balance)
     // We always want to show the starting point to establish the baseline
     if (!hasStartDateData) {
-      // Total assets at start = starting balance + current pending (approximation)
-      const startTotalAssets = startingBalance + currentPending;
+      // Total assets at start uses starting balance (pending changes over time)
+      const startTotalAssets = startingBalance;
       dataPoints.push({
         date: startDateKey,
         dateLabel: startDateLabel,
@@ -248,10 +232,8 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
           dateLabel = dateObj.toLocaleDateString("zh-TW", { month: "2-digit", day: "2-digit" });
       }
 
-      // Total assets = balanceAfter + pending bets
-      // Note: We use currentPending for all historical points as an approximation
-      // (In reality, pending bets change over time, but we don't have that historical data)
-      const totalAssets = balance + currentPending;
+      // Total assets history uses balanceAfter (no pending approximation)
+      const totalAssets = balance;
 
       dataPoints.push({
         date,
@@ -304,7 +286,7 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
     }
 
     return finalDataPoints;
-  }, [transactions, timeRange, currentTotalAssets, currentPending, userCreatedAt]);
+  }, [transactions, timeRange, currentTotalAssets, userCreatedAt]);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString(undefined, {

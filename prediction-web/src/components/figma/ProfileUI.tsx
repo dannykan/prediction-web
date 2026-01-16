@@ -85,8 +85,8 @@ export function ProfileUI({
   const positionsCurrentValue = positions.reduce((sum, pos) => sum + parseFloat(pos.currentValue || "0"), 0);
   const positionsTotalCost = positions.reduce((sum, pos) => sum + parseFloat(pos.totalCost || "0"), 0);
   
-  // Total assets = balance + positions current value (持倉當前價值)
-  const totalAssets = balance + positionsCurrentValue;
+  // Total assets: prefer backend statistics for consistency with sidebar
+  const totalAssets = statistics?.statistics?.profitRate?.total?.totalAssets ?? (balance + positionsCurrentValue);
   
   // Calculate unrealized PnL from positions (currentValue - totalCost)
   const unrealizedPnL = positions.reduce((sum, pos) => sum + parseFloat(pos.profitLoss || "0"), 0);
