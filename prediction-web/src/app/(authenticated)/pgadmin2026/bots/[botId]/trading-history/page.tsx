@@ -20,6 +20,7 @@ interface BotTradingHistoryData {
     createdAt: string;
     referenceId: string | null;
     balanceAfter?: number;
+    tradeSide?: string | null;
     marketInfo?: {
       marketId: string;
       marketTitle: string;
@@ -252,7 +253,8 @@ export default function BotTradingHistoryPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">時間</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">類型</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">交易類型</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">金額</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">餘額變化</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">市場</th>
@@ -260,28 +262,46 @@ export default function BotTradingHistoryPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {data.transactions.map((tx) => (
-                <tr key={tx.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {formatDate(tx.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{tx.type}</td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                    tx.amount >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {tx.amount >= 0 ? '+' : ''}{formatNumber(tx.amount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {tx.balanceAfter !== undefined ? formatNumber(tx.balanceAfter) : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {tx.marketInfo?.marketTitle || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm max-w-md truncate">
-                    {tx.description}
-                  </td>
-                </tr>
-              ))}
+              {data.transactions.map((tx) => {
+                const getTradeAction = (tradeSide: string | null | undefined) => {
+                  if (!tradeSide) return null;
+                  if (tradeSide.includes('BUY')) return { text: '買入', color: 'text-blue-600', bg: 'bg-blue-50' };
+                  if (tradeSide.includes('SELL')) return { text: '平倉', color: 'text-orange-600', bg: 'bg-orange-50' };
+                  return null;
+                };
+                const tradeAction = getTradeAction(tx.tradeSide);
+                return (
+                  <tr key={tx.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {formatDate(tx.createdAt)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{tx.type}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {tradeAction ? (
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${tradeAction.bg} ${tradeAction.color}`}>
+                          {tradeAction.text}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                      tx.amount >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {tx.amount >= 0 ? '+' : ''}{formatNumber(tx.amount)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {tx.balanceAfter !== undefined ? formatNumber(tx.balanceAfter) : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {tx.marketInfo?.marketTitle || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm max-w-md truncate">
+                      {tx.description}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {data.transactions.length === 0 && (
