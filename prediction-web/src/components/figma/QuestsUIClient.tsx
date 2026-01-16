@@ -58,6 +58,9 @@ export function QuestsUIClient() {
               weeklyQuests: [],
               canClaimCompletionBonus: false,
               completionBonusClaimed: false,
+              completionBonusReward: 0,
+              totalQuests: 0,
+              completedQuests: 0,
             } as QuestsResponse;
           }),
           getUserStatistics(userData.id).catch((err) => {
