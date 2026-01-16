@@ -314,20 +314,19 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                   </div>
                 </div>
                 
-                {/* 🔁 區塊 3：如果你現在反悔 */}
+                {/* 🔁 區塊 3：結算時可拿回 */}
                 {(() => {
                   const exclusiveQuote = quote as ExclusiveQuoteResult;
                   const shares = parseFloat(exclusiveQuote.shares);
-                  const grossAmount = parseFloat(exclusiveQuote.grossAmount);
+                  
+                  // 在 LMSR 中，如果結算時押注的答案正確，每個 share 價值 1 G coin
+                  const settlementPayout = shares * 1;
                   
                   return shares > 0 && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="text-sm text-gray-600 mb-1">若交易後立即平倉，約可拿回：</div>
+                      <div className="text-sm text-gray-600 mb-1">若結算時你押注的答案正確，結算後可拿回：</div>
                       <div className="text-lg font-semibold text-green-700">
-                        {formatCurrency(grossAmount)} G Coin
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        實際可拿回數量會隨市場價格變動
+                        {formatCurrency(settlementPayout)} G Coin
                       </div>
                     </div>
                   );
@@ -382,19 +381,18 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                   </div>
                 </div>
                 
-                {/* 🔁 區塊 3：如果你現在反悔 */}
+                {/* 🔁 區塊 3：結算時可拿回 */}
                 {(() => {
                   const totalShares = parseFloat((quote as BundleQuoteResult).totalShares);
-                  const totalGrossAmount = parseFloat((quote as BundleQuoteResult).totalGrossAmount);
+                  
+                  // 在 LMSR 中，如果結算時押注的答案正確（該選項不是答案），每個 share 價值 1 G coin
+                  const settlementPayout = totalShares * 1;
                   
                   return totalShares > 0 && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="text-sm text-gray-600 mb-1">若交易後立即平倉，約可拿回：</div>
+                      <div className="text-sm text-gray-600 mb-1">若結算時你押注的答案正確，結算後可拿回：</div>
                       <div className="text-lg font-semibold text-green-700">
-                        {formatCurrency(totalGrossAmount)} G Coin
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        實際可拿回數量會隨市場價格變動
+                        {formatCurrency(settlementPayout)} G Coin
                       </div>
                     </div>
                   );
@@ -441,19 +439,18 @@ export function LmsrTradingCard({ marketId, market, onLogin, onTradeSuccess }: L
                   </div>
                 </div>
 
-                {/* 2. 如果現在退出 - 使用當前價格估算 */}
+                {/* 2. 結算時可拿回 */}
                 {(() => {
                   const shares = parseFloat((quote as QuoteResult).shares);
-                  const grossAmount = parseFloat((quote as QuoteResult).grossAmount);
+                  
+                  // 在 LMSR 中，如果結算時押注的答案正確，每個 share 價值 1 G coin
+                  const settlementPayout = shares * 1;
                   
                   return shares > 0 && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="text-sm text-gray-600 mb-1">若交易後立即平倉，約可拿回：</div>
+                      <div className="text-sm text-gray-600 mb-1">若結算時你押注的答案正確，結算後可拿回：</div>
                       <div className="text-lg font-semibold text-green-700">
-                        {formatCurrency(grossAmount)} G Coin
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        實際可拿回數量會隨市場價格變動
+                        {formatCurrency(settlementPayout)} G Coin
                       </div>
                     </div>
                   );
