@@ -60,6 +60,7 @@ interface BackendMarketListItem {
   votePercentage?: Record<string, number>;
   questionType?: 'YES_NO' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE';
   mechanism?: string; // 'LMSR_V2'
+  yesProbability?: number | null; // YES probability from backend
   category?: {
     id: string;
     name: string;
@@ -279,6 +280,10 @@ export function normalizeMarket(
     tradeCount: (backendMarket as any).tradeCount,
     usersWithPositions: (backendMarket as any).usersWithPositions,
     commentsCount: (backendMarket as any).commentsCount,
+    // Probability from backend (if available)
+    yesProbability: (backendMarket as any).yesProbability !== undefined 
+      ? (backendMarket as any).yesProbability 
+      : undefined,
   };
 }
 

@@ -39,14 +39,25 @@ function MarketCardUIComponent({ market, commentsCount = 0 }: MarketCardUIProps)
     : '';
 
   // 狀態：真實機率數據
-  const [yesProbability, setYesProbability] = useState<number | null>(null);
+  // 優先使用後端返回的機率（如果有的話），否則從 API 獲取
+  const [yesProbability, setYesProbability] = useState<number | null>(
+    market.yesProbability !== undefined ? market.yesProbability : null
+  );
   const [topOptions, setTopOptions] = useState<TopOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!market.yesProbability); // 如果後端已提供機率，不需要加載
 
   // 獲取真實的機率數據
   useEffect(() => {
     const fetchProbabilities = async () => {
-      // Fetch real-time probabilities via API
+      // 如果後端已經提供了機率，直接使用，不需要額外 API 調用
+      if (market.yesProbability !== undefined && market.yesProbability !== null) {
+        setYesProbability(market.yesProbability);
+        setLoading(false);
+        logger.logWithPrefix('MarketCardUI', `Using YES probability from backend for market ${market.id}:`, market.yesProbability);
+        return;
+      }
+
+      // Fetch real-time probabilities via API (fallback if backend didn't provide)
 
       try {
         const questionType = market.questionType;

@@ -51,4 +51,6 @@ export interface Market {
   tradeCount?: number;
   usersWithPositions?: number;
   commentsCount?: number;
+  // Probability for YES_NO markets (from backend)
+  yesProbability?: number | null; // YES probability in percentage (0-100), null if not available
 }
