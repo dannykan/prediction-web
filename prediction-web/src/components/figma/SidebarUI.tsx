@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Trophy, PlusCircle, CheckSquare, Bell, User, Users, LogOut, Copy, X } from 'lucide-react';
+import { Home, Trophy, PlusCircle, CheckSquare, Bell, User, Users, LogOut, Copy, X, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -29,6 +29,7 @@ const menuItems = [
   { id: 'leaderboard', label: '排行榜', labelEn: 'Leaderboard', icon: Trophy, path: '/leaderboard', requireLogin: false },
   { id: 'create', label: '創建問題', labelEn: 'Create', icon: PlusCircle, path: '/create-question', requireLogin: true },
   { id: 'quests', label: '任務', labelEn: 'Quests', icon: CheckSquare, path: '/quests', requireLogin: true },
+  { id: 'topup', label: '儲值', labelEn: 'Topup', icon: Wallet, path: '/topup', requireLogin: true },
   { id: 'notifications', label: '通知', labelEn: 'Notifications', icon: Bell, path: '/notifications', requireLogin: true },
   { id: 'referrals', label: '邀請好友', labelEn: 'Referrals', icon: Users, path: '/referrals', requireLogin: true },
   { id: 'profile', label: '我的', labelEn: 'Profile', icon: User, path: '/profile', requireLogin: true },

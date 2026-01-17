@@ -18,7 +18,8 @@ import {
   Users,
   Copy,
   Check,
-  Send
+  Send,
+  Wallet
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -91,6 +92,7 @@ export function Sidebar({ isOpen: controlledIsOpen, onToggle }: SidebarProps) {
     { icon: Trophy, label: "排行榜", href: "/leaderboard", requiresAuth: false },
     { icon: Plus, label: "創建問題", href: "/create-question", requiresAuth: true },
     { icon: Gift, label: "任務", href: "/quests", requiresAuth: true },
+    { icon: Wallet, label: "儲值", href: "/topup", requiresAuth: true },
     { icon: Bell, label: "通知", href: "/notifications", requiresAuth: true },
     { icon: UserIcon, label: "我的", href: "/profile", requiresAuth: true },
     // Removed Settings - { icon: Settings, label: "設定", href: "/settings", requiresAuth: true },
