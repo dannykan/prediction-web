@@ -34,7 +34,7 @@ export function MyPosition({ marketId, isLoggedIn, questionType = 'YES_NO', mark
       try {
         setLoading(true);
         
-        // Use aggregated data if available
+        // Use aggregated data if available (even if dataLoading is true, we can still use the data)
         if (marketDetailData?.positions) {
           if (isSingle) {
             setExclusivePositions(marketDetailData.positions.exclusive || []);
@@ -44,7 +44,8 @@ export function MyPosition({ marketId, isLoggedIn, questionType = 'YES_NO', mark
             setExclusivePositions([]);
           }
         } else if (!dataLoading) {
-          // Fallback to individual API calls
+          // Fallback to individual API calls only if dataLoading is false
+          // This avoids making redundant API calls while aggregated data is loading
           if (isSingle) {
             const exclusivePos = await getExclusiveMarketPositions(marketId);
             setExclusivePositions(exclusivePos);
@@ -55,6 +56,8 @@ export function MyPosition({ marketId, isLoggedIn, questionType = 'YES_NO', mark
             setExclusivePositions([]);
           }
         }
+        // If dataLoading is true and marketDetailData?.positions is not available,
+        // we'll wait for the next render when dataLoading becomes false or positions are available
       } catch (error) {
         console.error('[MyPosition] Failed to load positions:', error);
         setPositions([]);

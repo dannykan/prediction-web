@@ -5,6 +5,7 @@ import Image from "next/image";
 import { TrendingUp, Clock, Circle, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { zhTW } from "date-fns/locale";
+import { parseToTaipeiTime } from "@/utils/formatDate";
 import { getAllPositions, type AllPosition } from "../api/getAllPositions";
 import { getAllTrades, type Trade, type TradesResponse } from "../api/getAllTrades";
 import { formatCurrency } from "@/shared/utils/format";
@@ -245,7 +246,7 @@ export function TradeHistorySection({ marketId, isSingle, questionType: rawQuest
               const profitLoss = parseFloat(position.profitLoss);
               const profitLossPercent = parseFloat(position.profitLossPercent);
               const isProfit = profitLoss >= 0;
-              const entryDate = parseTimeString(position.firstTradeAt);
+              const entryDate = parseToTaipeiTime(position.firstTradeAt) || parseTimeString(position.firstTradeAt);
               const normalizedOptionName = normalizeOptionName(position.optionName || '', questionType);
               const direction = position.side === 'YES' ? 'yes' : 'no';
 
@@ -350,7 +351,7 @@ export function TradeHistorySection({ marketId, isSingle, questionType: rawQuest
               const isBuy = trade.isBuy;
               const side = trade.side;
               const direction = side.includes('YES') ? 'yes' : 'no';
-              const tradeDate = parseTimeString(trade.createdAt);
+              const tradeDate = parseToTaipeiTime(trade.createdAt) || parseTimeString(trade.createdAt);
               const normalizedOptionName = normalizeOptionName(trade.optionName || '', questionType);
 
               return (

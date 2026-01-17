@@ -205,6 +205,37 @@ export function MarketDetailUIClient({
     }
   };
 
+  // 刷新市場詳情數據（用於下注後刷新持倉等數據）
+  const handleRefreshMarketData = async () => {
+    try {
+      setDataLoading(true);
+      const data = await getMarketDetailData(market.id);
+      setMarketDetailData(data);
+      
+      // 同時更新用戶信息和統計資料
+      if (data.user) {
+        setIsLoggedIn(true);
+        setUser({
+          id: data.user.id,
+          displayName: data.user.displayName,
+          avatarUrl: data.user.avatarUrl,
+        } as User);
+        
+        if (data.user.statistics) {
+          setUserStatistics({
+            statistics: data.user.statistics,
+          });
+        }
+        
+        setIsFollowing(data.user.followStatus || false);
+      }
+    } catch (error) {
+      console.error('[MarketDetailUIClient] Failed to refresh market detail data:', error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   // 準備用戶資料給 UI
   // 即使 userStatistics 還沒載入，也要顯示基本用戶資訊給 Sidebar
   const uiUser = user ? {
@@ -219,6 +250,7 @@ export function MarketDetailUIClient({
       market={market}
       commentsCount={commentsCount}
       onRefresh={handleRefresh}
+      onRefreshMarketData={handleRefreshMarketData}
       isLoggedIn={isLoggedIn}
       user={uiUser}
       onLogin={handleLogin}

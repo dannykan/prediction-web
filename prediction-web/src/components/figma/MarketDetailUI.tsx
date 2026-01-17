@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, BarChart3, Clock, Users, MessageCircle, Share2, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import { parseToTaipeiTime, formatTaipeiTime } from '@/utils/formatDate';
 import Image from 'next/image';
 import type { Market } from '@/features/market/types/market';
 import { LmsrTradingCard } from '@/features/market/components/LmsrTradingCard';
@@ -37,6 +38,7 @@ interface MarketDetailUIProps {
   market: Market;
   commentsCount?: number;
   onRefresh?: () => Promise<void>;
+  onRefreshMarketData?: () => Promise<void>; // 新增：刷新市場詳情數據（用於下注後刷新）
   isLoggedIn?: boolean;
   user?: {
     name: string;
@@ -58,6 +60,7 @@ export function MarketDetailUI({
   market,
   commentsCount = 0,
   onRefresh,
+  onRefreshMarketData,
   isLoggedIn = false,
   user,
   onLogin,
@@ -122,14 +125,15 @@ export function MarketDetailUI({
   // 獲取圖片
   const marketImage = market.imageUrl || 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=800';
 
-  // 獲取截止時間
-  const timeUntilClose = market.closeTime 
-    ? formatDistanceToNow(new Date(market.closeTime), { addSuffix: true, locale: zhTW })
+  // 獲取截止時間（轉換為台北時間）
+  const closeTimeTaipei = market.closeTime ? parseToTaipeiTime(market.closeTime) : null;
+  const timeUntilClose = closeTimeTaipei 
+    ? formatDistanceToNow(closeTimeTaipei, { addSuffix: true, locale: zhTW })
     : '';
 
-  // 獲取創建時間
+  // 獲取創建時間（轉換為台北時間）
   const createdAt = market.createdAt 
-    ? new Date(market.createdAt).toLocaleDateString('zh-TW')
+    ? formatTaipeiTime(market.createdAt, { year: 'numeric', month: '2-digit', day: '2-digit' })
     : '';
 
   return (
@@ -320,8 +324,13 @@ export function MarketDetailUI({
                 selectedOptionsForChart={selectedOptionsForChart}
                 onSelectedOptionsForChartChange={setSelectedOptionsForChart}
                 onTradeSuccess={async () => {
-                  // 交易成功後立即刷新頁面
-                  window.location.reload();
+                  // 交易成功後刷新市場詳情數據（包括持倉等）
+                  if (onRefreshMarketData) {
+                    await onRefreshMarketData();
+                  } else {
+                    // 回退方案：刷新整個頁面
+                    window.location.reload();
+                  }
                 }}
               />
             </div>

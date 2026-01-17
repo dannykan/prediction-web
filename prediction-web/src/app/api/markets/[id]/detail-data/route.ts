@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getApiBaseUrl } from '@/core/api/getApiBaseUrl';
+import { getAuthTokenFromRequest } from '@/core/auth/cookies';
 
 /**
  * GET /api/markets/[id]/detail-data
@@ -13,15 +14,24 @@ export async function GET(
     const { id } = await params;
     const apiBaseUrl = getApiBaseUrl();
     
-    // Get auth cookie from request
-    const cookieHeader = request.headers.get('cookie') || '';
+    // Get auth token from request
+    const token = await getAuthTokenFromRequest(request);
+    
+    // Build headers
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      // Include cookie for backward compatibility
+      Cookie: request.headers.get('cookie') || '',
+    };
+    
+    // Add Authorization header if token exists
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     
     const response = await fetch(`${apiBaseUrl}/markets/${encodeURIComponent(id)}/detail-data`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader,
-      },
+      headers,
       credentials: 'include',
       cache: 'no-store',
     });
