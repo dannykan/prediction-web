@@ -3,6 +3,7 @@
 import { MessageCircle, ThumbsUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import { parseToTaipeiTime } from '@/utils/formatDate';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { UserComment } from '@/features/user/api/getUserComments';
@@ -15,7 +16,7 @@ interface ProfileCommentsProps {
 
 function formatTimeAgo(date: string): string {
   const now = new Date();
-  const then = new Date(date);
+  const then = parseToTaipeiTime(date) || new Date(date);
   const diffMs = now.getTime() - then.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);

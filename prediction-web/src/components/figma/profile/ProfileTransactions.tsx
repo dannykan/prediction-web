@@ -3,6 +3,7 @@
 import { ArrowUpRight, ArrowDownRight, Plus, Minus, Activity } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import { parseToTaipeiTime } from '@/utils/formatDate';
 import Image from 'next/image';
 import type { Transaction } from '@/features/user/api/getUserTransactions';
 import Link from 'next/link';
@@ -175,7 +176,7 @@ const getQuestDetailText = (transaction: Transaction): string | null => {
 
 // 格式化時間顯示：超過1小時顯示完整日期時間格式
 const formatTransactionTime = (createdAt: string): string => {
-  const transactionDate = new Date(createdAt);
+  const transactionDate = parseToTaipeiTime(createdAt) || new Date(createdAt);
   const now = new Date();
   const diffInHours = (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
   

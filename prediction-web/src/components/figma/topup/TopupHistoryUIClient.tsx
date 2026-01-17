@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, CheckCircle, Filter } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { zhTW } from "date-fns/locale";
+import { parseToTaipeiTime } from "@/utils/formatDate";
 import { SidebarUI } from "../SidebarUI";
 import { MobileHeaderUI } from "../MobileHeaderUI";
 import { PullToRefresh } from "../PullToRefresh";
@@ -290,7 +291,7 @@ export function TopupHistoryUIClient() {
                         <div className="flex items-center gap-2 text-xs text-slate-500">
                           <span>{item.paymentMethod}</span>
                           <span>•</span>
-                          <span>{formatDistanceToNow(item.time, { addSuffix: true, locale: zhTW })}</span>
+                          <span>{formatDistanceToNow(parseToTaipeiTime(item.time) || item.time, { addSuffix: true, locale: zhTW })}</span>
                         </div>
                       </div>
                     </div>

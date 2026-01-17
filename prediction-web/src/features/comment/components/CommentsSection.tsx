@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { MessageCircle, Send, ThumbsUp } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { parseToTaipeiTime } from "@/utils/formatDate";
 import { zhTW } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { getMe } from "@/features/user/api/getMe";
@@ -351,7 +352,7 @@ export function CommentsSection({ marketId, userId, highlightCommentId, question
                         )}
                       </button>
                       <span className="text-slate-400">
-                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: zhTW })}
+                        {formatDistanceToNow(parseToTaipeiTime(comment.createdAt) || new Date(comment.createdAt), { addSuffix: true, locale: zhTW })}
                       </span>
                     </div>
                   </div>
