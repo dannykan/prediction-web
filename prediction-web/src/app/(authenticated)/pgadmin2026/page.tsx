@@ -228,6 +228,34 @@ function AdminPageContent() {
             管理獎勵配置和規則
           </p>
         </Link>
+
+        {/* 問題反饋 */}
+        <Link
+          href="/pgadmin2026/feedback"
+          className="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200"
+        >
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mr-4">
+              <svg
+                className="w-6 h-6 text-pink-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold">問題反饋</h2>
+          </div>
+          <p className="text-gray-600">
+            查看用戶提交的問題反饋和建議
+          </p>
+        </Link>
       </div>
     </div>
   );

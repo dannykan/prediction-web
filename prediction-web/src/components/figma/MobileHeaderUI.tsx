@@ -15,6 +15,7 @@ interface MobileHeaderUIProps {
   };
   unclaimedQuestsCount?: number;
   unreadNotificationsCount?: number;
+  onLogin?: () => void;
 }
 
 export function MobileHeaderUI({ 
@@ -23,6 +24,7 @@ export function MobileHeaderUI({
   user,
   unclaimedQuestsCount = 0,
   unreadNotificationsCount = 0,
+  onLogin,
 }: MobileHeaderUIProps) {
   // Calculate total unread items (quests + notifications)
   const hasUnreadItems = (unclaimedQuestsCount > 0) || (unreadNotificationsCount > 0);
@@ -61,6 +63,13 @@ export function MobileHeaderUI({
             <GCoinIcon size={20} priority={true} />
             <span className="font-bold text-amber-600 text-sm">{formatNumber(user.totalAssets)}</span>
           </div>
+        ) : onLogin ? (
+          <button
+            onClick={onLogin}
+            className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-semibold rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm"
+          >
+            登入
+          </button>
         ) : (
           <div className="w-10" />
         )}

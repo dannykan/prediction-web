@@ -259,6 +259,7 @@ export function LeaderboardUIClient({ initialData, currentUserId }: LeaderboardU
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         isLoggedIn={isLoggedIn}
         user={uiUser}
+        onLogin={handleLogin}
       />
 
       <div className="flex w-full">

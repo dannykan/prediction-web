@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Trophy, PlusCircle, CheckSquare, Bell, User, Users, LogOut, Copy, X, Wallet } from 'lucide-react';
+import { Home, Trophy, PlusCircle, CheckSquare, Bell, User, Users, LogOut, Copy, X, Wallet, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -226,6 +226,22 @@ export function SidebarUI({ isOpen, onClose, isLoggedIn, user, onLogin, onLogout
 
         {/* Login/Logout */}
         <div className="p-4 border-t border-slate-200">
+          {/* Feedback Button - Only show when logged in */}
+          {isLoggedIn && (
+            <Link
+              href="/feedback"
+              onClick={() => {
+                if (window.innerWidth < 768) {
+                  onClose();
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mb-3 bg-slate-50 text-slate-700 rounded-lg font-medium hover:bg-slate-100 border border-slate-200 transition-all"
+            >
+              <MessageSquare className="w-4 h-4" />
+              問題反饋
+            </Link>
+          )}
+
           {!isLoggedIn ? (
             <button 
               onClick={onLogin}

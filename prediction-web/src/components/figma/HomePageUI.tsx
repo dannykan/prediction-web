@@ -298,6 +298,7 @@ export function HomePageUI({
         } : undefined}
         unclaimedQuestsCount={unclaimedQuestsCount}
         unreadNotificationsCount={unreadNotificationsCount}
+        onLogin={onLogin}
       />
 
       <div className="flex w-full">
