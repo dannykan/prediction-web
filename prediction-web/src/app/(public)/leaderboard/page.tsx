@@ -6,6 +6,7 @@ import { getMeServer } from "@/features/user/api/getMeServer";
 import { getSeasonCode, DEFAULT_SEASONS } from "@/features/leaderboard/utils/season";
 import { LeaderboardUIClient } from "@/components/figma/LeaderboardUIClient";
 
+// Use ISR with revalidation
 export const revalidate = 60;
 
 export const metadata: Metadata = {
@@ -20,8 +21,14 @@ export const metadata: Metadata = {
 };
 
 export default async function LeaderboardPage() {
-  // Get current user
-  const currentUser = await getMeServer();
+  // Get current user (gracefully handle cookie access during build)
+  let currentUser = null;
+  try {
+    currentUser = await getMeServer();
+  } catch (error) {
+    // During build time, cookies might not be available - that's okay
+    console.log('[LeaderboardPage] Could not get user during build, continuing without user data');
+  }
   const currentUserId = currentUser?.id;
 
   // Get default season
