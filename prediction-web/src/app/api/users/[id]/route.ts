@@ -74,10 +74,14 @@ export async function PATCH(
     // Forward to backend
     const backendUrl = `${getApiBaseUrl()}/users/${encodeURIComponent(id)}`;
     
+    // Get auth token from cookie
+    const cookieHeader = request.headers.get("cookie") || "";
+    
     const response = await fetch(backendUrl, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Cookie: cookieHeader, // Forward cookie for authentication
       },
       body: JSON.stringify(body),
       credentials: "include",

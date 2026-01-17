@@ -134,14 +134,26 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
 
     if (useSnapshots && snapshots.length > 0) {
       // Use snapshots (preferred method - includes total assets with positions value)
-      const filteredSnapshots = snapshots.filter((snapshot) => {
+      // Ensure snapshots are sorted by date (ascending)
+      const sortedSnapshots = [...snapshots].sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return dateA - dateB;
+      });
+
+      const filteredSnapshots = sortedSnapshots.filter((snapshot) => {
         const snapshotDate = new Date(snapshot.date);
         return snapshotDate >= start && snapshotDate <= end;
       });
 
+      console.log(`[TotalAssetsChart] Using ${filteredSnapshots.length} snapshots for chart (from ${sortedSnapshots.length} total)`);
+
       filteredSnapshots.forEach((snapshot) => {
         const dateObj = new Date(snapshot.date);
         const dateTimestamp = dateObj.getTime();
+        
+        // Ensure totalAssets is a valid number
+        const totalAssets = Number(snapshot.totalAssets) || 0;
         
         let dateLabel: string;
         switch (timeRange) {
@@ -163,7 +175,7 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
         dataPoints.push({
           date: snapshot.date,
           dateLabel,
-          totalAssets: Number(snapshot.totalAssets.toFixed(2)),
+          totalAssets: Number(totalAssets.toFixed(2)),
           timestamp: dateTimestamp,
         });
       });
@@ -174,11 +186,20 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
       
       if (!hasStartSnapshot && filteredSnapshots.length > 0) {
         // Find the snapshot before start date to use as starting point
-        const beforeStart = snapshots
+        const beforeStart = sortedSnapshots
           .filter(s => new Date(s.date) < start)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
         
-        const startTotalAssets = beforeStart ? beforeStart.totalAssets : NEW_USER_REWARD;
+        // If no snapshot before start, use the first snapshot's totalAssets as starting point
+        // Otherwise use the beforeStart snapshot's totalAssets, or fallback to NEW_USER_REWARD
+        let startTotalAssets: number;
+        if (beforeStart) {
+          startTotalAssets = Number(beforeStart.totalAssets) || NEW_USER_REWARD;
+        } else {
+          // Use the first available snapshot's value as starting point
+          const firstSnapshot = sortedSnapshots[0];
+          startTotalAssets = firstSnapshot ? (Number(firstSnapshot.totalAssets) || NEW_USER_REWARD) : NEW_USER_REWARD;
+        }
         let startDateLabel: string;
         switch (timeRange) {
           case "day":
@@ -346,6 +367,42 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
     return finalDataPoints;
   }, [snapshots, transactions, timeRange, currentTotalAssets, userCreatedAt, useSnapshots]);
 
+  // Calculate Y-axis domain based on data range
+  const yAxisDomain = useMemo(() => {
+    if (chartData.length === 0) {
+      return ['auto', 'auto'] as const;
+    }
+
+    const values = chartData.map((point) => point.totalAssets);
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    
+    // If all values are the same (or very close), create a range around the value
+    const range = maxValue - minValue;
+    const averageValue = (minValue + maxValue) / 2;
+    
+    // If range is very small (less than 5% of average value), use percentage-based padding
+    // Otherwise, use fixed percentage padding (5% on each side)
+    let min: number;
+    let max: number;
+    
+    if (range < averageValue * 0.05) {
+      // Values are very close, create a range centered on the average value
+      // Use 5% padding on each side of the average value
+      const padding = Math.max(averageValue * 0.05, range * 2 || 1);
+      min = Math.max(0, averageValue - padding);
+      max = averageValue + padding;
+    } else {
+      // Values have meaningful range, add 5% padding on each side
+      const padding = range * 0.05;
+      min = Math.max(0, minValue - padding);
+      max = maxValue + padding;
+    }
+    
+    // Ensure minimum value is not negative
+    return [Math.max(0, min), max] as const;
+  }, [chartData]);
+
   const formatCurrency = (value: number) => {
     return value.toLocaleString(undefined, {
       minimumFractionDigits: 2,
@@ -422,8 +479,8 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
         })}
       </div>
 
-      <div className="h-48 md:h-80 w-full overflow-hidden" style={{ minWidth: 0, minHeight: '192px' }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full" style={{ minWidth: 0, minHeight: '192px', height: '192px', position: 'relative' }}>
+        <ResponsiveContainer width="100%" height={192} minHeight={192}>
           <LineChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis 
@@ -436,6 +493,7 @@ export function TotalAssetsChart({ userId, userCreatedAt, currentTotalAssets }: 
               style={{ fontSize: '10px' }}
               tickFormatter={(value) => formatCurrencyShort(value)}
               width={40}
+              domain={yAxisDomain}
             />
             <Tooltip
               contentStyle={{

@@ -1,17 +1,16 @@
-import type { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+import { SidebarProvider } from "@/components/figma/SidebarProvider";
 
 export default function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <SidebarProvider>
+      {children}
+    </SidebarProvider>
+  );
 }
 

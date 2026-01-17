@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.prediction-god.com';
+import { getApiBaseUrl } from '@/core/api/getApiBaseUrl';
 
 export async function GET(
   request: NextRequest,
@@ -17,7 +16,8 @@ export async function GET(
     if (endDate) queryParams.append('endDate', endDate);
 
     const queryString = queryParams.toString();
-    const url = `${API_BASE_URL}/users/${userId}/asset-snapshots${queryString ? `?${queryString}` : ''}`;
+    const apiBaseUrl = getApiBaseUrl();
+    const url = `${apiBaseUrl}/users/${userId}/asset-snapshots${queryString ? `?${queryString}` : ''}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -30,18 +30,20 @@ export async function GET(
     });
 
     if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Failed to fetch asset snapshots');
+      console.error('[asset-snapshots] Backend error:', errorText);
       return NextResponse.json(
-        { error: 'Failed to fetch asset snapshots' },
+        { error: errorText || 'Failed to fetch asset snapshots' },
         { status: response.status }
       );
     }
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error('[asset-snapshots] Error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }
@@ -53,7 +55,8 @@ export async function POST(
 ) {
   try {
     const { id: userId } = await params;
-    const url = `${API_BASE_URL}/users/${userId}/asset-snapshots/record`;
+    const apiBaseUrl = getApiBaseUrl();
+    const url = `${apiBaseUrl}/users/${userId}/asset-snapshots/record`;
 
     const response = await fetch(url, {
       method: 'POST',

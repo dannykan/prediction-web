@@ -7,8 +7,8 @@ import { TrendingUp, Clock, Star, CheckCircle, Timer } from 'lucide-react';
 import { SearchBar } from './SearchBar';
 import { PullToRefresh } from './PullToRefresh';
 import { MarketCardUI } from './MarketCardUI';
-import { SidebarUI } from './SidebarUI';
 import { MobileHeaderUI } from './MobileHeaderUI';
+import { useSidebar } from './SidebarProvider';
 import type { Market } from '@/features/market/types/market';
 import type { Category } from '@/features/market/api/getCategories';
 
@@ -141,7 +141,7 @@ export function HomePageUI({
   const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const [internalSelectedCategory, setInternalSelectedCategory] = useState('全部');
   const [internalSelectedFilter, setInternalSelectedFilter] = useState('熱門');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { openSidebar } = useSidebar();
   
   // Touch gesture detection for mobile swipe to open sidebar
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -162,7 +162,7 @@ export function HomePageUI({
     const handleTouchStart = (e: TouchEvent) => {
       // Only handle touches starting from the left edge
       const touch = e.touches[0];
-      if (touch.clientX <= EDGE_THRESHOLD && !sidebarOpen) {
+      if (touch.clientX <= EDGE_THRESHOLD) {
         touchStartRef.current = {
           x: touch.clientX,
           y: touch.clientY,
@@ -197,11 +197,10 @@ export function HomePageUI({
       if (
         deltaX >= MIN_SWIPE_DISTANCE &&
         deltaY < MAX_VERTICAL_DISTANCE &&
-        deltaTime < MAX_SWIPE_TIME &&
-        !sidebarOpen
+        deltaTime < MAX_SWIPE_TIME
       ) {
         // Open sidebar
-        setSidebarOpen(true);
+        openSidebar();
         // Prevent any default browser behavior
         e.preventDefault();
       }
@@ -219,7 +218,7 @@ export function HomePageUI({
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isHomePage, sidebarOpen]);
+  }, [isHomePage, openSidebar]);
   
   // 使用外部狀態或內部狀態
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery;
@@ -288,31 +287,10 @@ export function HomePageUI({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 w-full overflow-x-hidden">
-      {/* Mobile Header */}
-      <MobileHeaderUI 
-        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-        isLoggedIn={isLoggedIn}
-        user={user ? {
-          totalAssets: user.totalAssets,
-          avatar: user.avatar,
-        } : undefined}
-        unclaimedQuestsCount={unclaimedQuestsCount}
-        unreadNotificationsCount={unreadNotificationsCount}
-        onLogin={onLogin}
-      />
+      {/* Mobile Header - 使用全局 Sidebar context */}
+      <MobileHeaderUI />
 
       <div className="flex w-full">
-        {/* Sidebar */}
-        <SidebarUI 
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          isLoggedIn={isLoggedIn}
-          user={user}
-          onLogin={onLogin}
-          onLogout={onLogout}
-          unclaimedQuestsCount={unclaimedQuestsCount}
-          unreadNotificationsCount={unreadNotificationsCount}
-        />
 
         {/* Main Content */}
         <PullToRefresh onRefresh={handleRefresh} className="flex-1 w-full min-w-0 lg:ml-64 pt-16 lg:pt-0 h-screen">
@@ -385,14 +363,6 @@ export function HomePageUI({
           </div>
         </PullToRefresh>
       </div>
-
-      {/* Overlay for mobile sidebar */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </div>
   );
 }

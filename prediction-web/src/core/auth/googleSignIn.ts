@@ -84,7 +84,28 @@ export async function initializeGoogleSignIn(enableOneTap: boolean = false): Pro
               console.log("[GoogleSignIn] One Tap automatic sign-in successful:", {
                 userId: data.user?.id,
                 email: data.user?.email,
+                isNewUser: data.isNewUser,
+                hasGoogleAvatarUrl: !!data.googleAvatarUrl,
               });
+              
+              // If user doesn't have an avatar and we have a Google avatar URL, upload it to Firebase Storage
+              // This applies to both new users and existing users without avatars
+              const needsAvatar = !data.user?.avatarUrl;
+              if (needsAvatar && data.googleAvatarUrl && data.user?.id) {
+                // Upload Google avatar asynchronously (don't block login success)
+                (async () => {
+                  try {
+                    const { uploadGoogleAvatar, updateUserAvatarUrl } = await import('./uploadGoogleAvatar');
+                    const firebaseStorageUrl = await uploadGoogleAvatar(data.googleAvatarUrl);
+                    await updateUserAvatarUrl(data.user.id, firebaseStorageUrl);
+                    console.log("[GoogleSignIn] Google avatar uploaded and updated successfully");
+                  } catch (error) {
+                    // Log error but don't block login flow
+                    console.warn("[GoogleSignIn] Failed to upload Google avatar (non-blocking):", error);
+                  }
+                })();
+              }
+              
               // Trigger page refresh to update UI with new login state
               if (typeof window !== 'undefined') {
                 window.location.reload();
@@ -185,7 +206,26 @@ export async function signInWithGoogleSilent(
               userId: data.user?.id,
               email: data.user?.email,
               isNewUser: data.isNewUser,
+              hasGoogleAvatarUrl: !!data.googleAvatarUrl,
             });
+
+            // If user doesn't have an avatar and we have a Google avatar URL, upload it to Firebase Storage
+            // This applies to both new users and existing users without avatars
+            const needsAvatar = !data.user?.avatarUrl;
+            if (needsAvatar && data.googleAvatarUrl && data.user?.id) {
+              // Upload Google avatar asynchronously (don't block login success)
+              (async () => {
+                try {
+                  const { uploadGoogleAvatar, updateUserAvatarUrl } = await import('./uploadGoogleAvatar');
+                  const firebaseStorageUrl = await uploadGoogleAvatar(data.googleAvatarUrl);
+                  await updateUserAvatarUrl(data.user.id, firebaseStorageUrl);
+                  console.log("[GoogleSignIn] Google avatar uploaded and updated successfully");
+                } catch (error) {
+                  // Log error but don't block login flow
+                  console.warn("[GoogleSignIn] Failed to upload Google avatar (non-blocking):", error);
+                }
+              })();
+            }
 
             onSuccess?.();
             resolve();
@@ -272,7 +312,26 @@ export async function signInWithGooglePopup(
               userId: data.user?.id,
               email: data.user?.email,
               isNewUser: data.isNewUser,
+              hasGoogleAvatarUrl: !!data.googleAvatarUrl,
             });
+
+            // If user doesn't have an avatar and we have a Google avatar URL, upload it to Firebase Storage
+            // This applies to both new users and existing users without avatars
+            const needsAvatar = !data.user?.avatarUrl;
+            if (needsAvatar && data.googleAvatarUrl && data.user?.id) {
+              // Upload Google avatar asynchronously (don't block login success)
+              (async () => {
+                try {
+                  const { uploadGoogleAvatar, updateUserAvatarUrl } = await import('./uploadGoogleAvatar');
+                  const firebaseStorageUrl = await uploadGoogleAvatar(data.googleAvatarUrl);
+                  await updateUserAvatarUrl(data.user.id, firebaseStorageUrl);
+                  console.log("[GoogleSignIn] Google avatar uploaded and updated successfully");
+                } catch (error) {
+                  // Log error but don't block login flow
+                  console.warn("[GoogleSignIn] Failed to upload Google avatar (non-blocking):", error);
+                }
+              })();
+            }
 
             onSuccess?.();
             resolve();

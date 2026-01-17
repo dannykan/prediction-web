@@ -206,10 +206,11 @@ export function MarketDetailUIClient({
   };
 
   // 準備用戶資料給 UI
-  const uiUser = user && userStatistics ? {
+  // 即使 userStatistics 還沒載入，也要顯示基本用戶資訊給 Sidebar
+  const uiUser = user ? {
     name: user.displayName || user.username || '用戶',
     avatar: user.avatarUrl || 'https://i.pravatar.cc/150?u=anonymous',
-    totalAssets: userStatistics.statistics.profitRate.total.totalAssets,
+    totalAssets: userStatistics?.statistics?.profitRate?.total?.totalAssets ?? user.coinBalance ?? 0,
     inviteCode: user.referralCode ?? undefined,
   } : undefined;
 

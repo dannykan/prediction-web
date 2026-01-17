@@ -1,9 +1,27 @@
-import Link from "next/link";
-import { getMeServer } from "@/features/user/api/getMeServer";
-import { LoginButton } from "./LoginButton";
+"use client";
 
-export async function Navbar() {
-  const currentUser = await getMeServer();
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { getMe } from "@/features/user/api/getMe";
+import { LoginButton } from "./LoginButton";
+import type { User } from "@/features/user/types/user";
+
+export function Navbar() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userData = await getMe().catch(() => null);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('[Navbar] Failed to load user:', error);
+        setCurrentUser(null);
+      }
+    };
+
+    loadUser();
+  }, []);
 
   return (
     <nav className="md:hidden border-b bg-background sticky top-0 z-40 backdrop-blur-sm h-[64px] flex-shrink-0">

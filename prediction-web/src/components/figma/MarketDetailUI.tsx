@@ -11,7 +11,6 @@ import type { Market } from '@/features/market/types/market';
 import { LmsrTradingCard } from '@/features/market/components/LmsrTradingCard';
 import { ProbabilityChart } from '@/features/market/components/ProbabilityChart';
 import { MyPosition } from '@/features/market/components/MyPosition';
-import { SidebarUI } from './SidebarUI';
 import { MobileHeaderUI } from './MobileHeaderUI';
 import { PullToRefresh } from './PullToRefresh';
 import { MarketDetailClient } from '@/features/market/components/MarketDetailClient';
@@ -71,7 +70,6 @@ export function MarketDetailUI({
   dataLoading = false,
 }: MarketDetailUIProps) {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isResolutionRulesExpanded, setIsResolutionRulesExpanded] = useState(false);
   // For MULTIPLE_CHOICE: track which options are selected for chart display
   const [selectedOptionsForChart, setSelectedOptionsForChart] = useState<Set<string>>(new Set());
@@ -136,26 +134,10 @@ export function MarketDetailUI({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Mobile Header */}
-      <MobileHeaderUI 
-        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-        isLoggedIn={isLoggedIn}
-        user={user ? {
-          totalAssets: user.totalAssets,
-          avatar: user.avatar,
-        } : undefined}
-      />
+      {/* Mobile Header - 使用全局 Sidebar context */}
+      <MobileHeaderUI />
 
       <div className="flex w-full">
-        {/* Sidebar */}
-        <SidebarUI 
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          isLoggedIn={isLoggedIn}
-          user={user}
-          onLogin={onLogin}
-          onLogout={onLogout}
-        />
 
         {/* Main Content */}
         <PullToRefresh onRefresh={handleRefresh} className="flex-1 w-full min-w-0 lg:ml-64 pt-16 lg:pt-0 h-screen">
@@ -372,13 +354,6 @@ export function MarketDetailUI({
         </PullToRefresh>
       </div>
 
-      {/* Overlay for mobile sidebar */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </div>
   );
 }

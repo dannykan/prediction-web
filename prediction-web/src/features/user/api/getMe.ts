@@ -23,53 +23,34 @@ export async function getMe(): Promise<User | null> {
 
     if (!response.ok) {
       if (response.status === 401) {
-        // Token expired, try to refresh using silent sign-in
-        if (!isRefreshing) {
-          isRefreshing = true;
-          try {
-            if (process.env.NODE_ENV === 'development') {
-              console.log("[getMe] Token expired, attempting silent sign-in refresh...");
-            }
-            await signInWithGoogleSilent();
-            if (process.env.NODE_ENV === 'development') {
-              console.log("[getMe] Silent sign-in successful, retrying getMe...");
-            }
-            
-            // Retry getMe after successful refresh
-            const retryResponse = await fetch("/api/me", {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              cache: "no-store",
-            });
-
-            if (retryResponse.ok) {
-              const data = await retryResponse.json();
-              isRefreshing = false;
-              return data.user || data;
-            }
-          } catch (refreshError) {
-            // Silent refresh failed - this is expected if user is not signed in to Google
-            // Only log in development to avoid console noise
-            if (process.env.NODE_ENV === 'development') {
-              console.log("[getMe] Silent sign-in refresh not available (user may need to manually login):", refreshError);
-            }
-            // Silent refresh failed, user will need to manually login
-          } finally {
-            isRefreshing = false;
-          }
-        }
-        return null; // Not authenticated
+        // 401 Unauthorized is expected for unauthenticated users
+        // Don't attempt silent refresh here - it causes unnecessary requests
+        // If user needs to login, they should do so explicitly
+        // Return null silently - this is normal for unauthenticated users
+        return null;
       }
-      throw new Error(`Failed to fetch current user: ${response.statusText}`);
+      // For other errors (500, etc.), log and return null
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("[getMe] Unexpected error:", response.status, response.statusText);
+      }
+      return null;
     }
 
     const data = await response.json();
     // Backend might return { user: {...} } or just the user object
     return data.user || data;
   } catch (error) {
-    console.error("[getMe] Failed to fetch current user:", error);
+    // Only log network errors or unexpected errors, not 401s
+    // 401s are handled above and are expected for unauthenticated users
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      // Network error - only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("[getMe] Network error:", error);
+      }
+    } else if (process.env.NODE_ENV === 'development') {
+      // Other unexpected errors - log in development
+      console.warn("[getMe] Unexpected error:", error);
+    }
     return null;
   }
 }
