@@ -284,23 +284,6 @@ export function QuestsUI({
         </div>
       </div>
 
-      {/* Reset Button (for testing) */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-slate-900 text-sm mb-1">測試功能</h3>
-            <p className="text-xs text-slate-600">重置所有任務進度（僅供測試）</p>
-          </div>
-          <button
-            onClick={onResetQuests}
-            disabled={isResetting}
-            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:border-indigo-500 hover:text-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-          >
-            <ChevronRight className="w-4 h-4" />
-            {isResetting ? "重置中..." : "重置"}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
