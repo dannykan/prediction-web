@@ -115,6 +115,10 @@ export function SidebarProvider({ children }: SidebarProviderProps) {
       });
 
       if (response.ok) {
+        // 清除登入狀態緩存
+        const { clearCachedLoginStatus } = await import('@/core/auth/loginCache');
+        clearCachedLoginStatus();
+        
         setIsLoggedIn(false);
         setUser(null);
         setUserStatistics(null);
